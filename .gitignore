@@ -1,0 +1,8 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.pdf
+*doc/
+*to_delete/
+*output/
