@@ -17,16 +17,18 @@ for(species in c("American Kestrel","Barn Swallow")){
   
   sp_dir = paste0("output/",species,"/")
   
+  load(paste0(sp_dir,"saved objects.RData"))
+  
   load(paste0(sp_dir,"saved objects2.RData"))
 
   
   
-  jags_data = tosave$m.year$model$cluster1$data()
+  jags_data = tosave2$m.year$model$cluster1$data()
 
 
 
 wparam = paste0("difmod_y[",rep(1:6,times = jags_data$nyears),",",rep(1:jags_data$nyears,each = 6),"]")
-dif_mod_strat = as.data.frame(tosave$m.year$summary[wparam,])
+dif_mod_strat = as.data.frame(tosave2$m.year$summary[wparam,])
 names(dif_mod_strat)[3:7] <- c("lci","lqrt","med","uqrt","uci")
 dif_mod_strat$Contrast = rep(1:6,times = jags_data$nyears)
 dif_mod_strat$Year = rep(1:jags_data$nyears,each = 6)+1965
@@ -50,12 +52,12 @@ print(an_contr)
 
 
 
-jags_data = tosave$m.strat$model$cluster1$data()
+jags_data = tosave2$m.strat$model$cluster1$data()
 
 
 
 wparam = paste0("difmod_s[",rep(1:6,times = jags_data$nstrat),",",rep(1:jags_data$nstrat,each = 6),"]")
-dif_mod_strat = as.data.frame(tosave$m.strat$summary[wparam,])
+dif_mod_strat = as.data.frame(tosave2$m.strat$summary[wparam,])
 names(dif_mod_strat)[3:7] <- c("lci","lqrt","med","uqrt","uci")
 dif_mod_strat$Contrast = rep(1:6,times = jags_data$nstrat)
 dif_mod_strat$Stratum = rep(1:jags_data$nstrat,each = 6)

@@ -10,7 +10,9 @@ library(lme4)
 models = c("gamye","gam","firstdiff","slope")
 heavy_tailed = TRUE #all models use the t-distribution to model extra-Poisson variance
 
-for(species in c("American Kestrel","Barn Swallow")){
+species_to_run = c("Wood Thrush", "American Kestrel","Barn Swallow")
+
+for(species in species_to_run[1]){
 
 sp_dir = paste0("output/",species,"/")
 #### calculate all annual indices (strata and continental)
@@ -263,7 +265,7 @@ save(list = c("tosave"),file = paste0(sp_dir,"saved objects.RData"))
 
 
 
-for(species in c("American Kestrel","Barn Swallow")){
+for(species in species_to_run[1]){
   
   sp_dir = paste0("output/",species,"/")
   
@@ -296,7 +298,7 @@ nyears = nyears
 ############ Bayesian model estimating the difference in fit among models and years while accounting for the uncertainty in the point-wise loo
 
 m.year = jagsUI::jags(data = jg.dat,
-                      model.file = "jags.mod.loo.txt",
+                      model.file = "summary_models/jags.mod.loo.txt",
                       parameters.to.save = c("mod","tau.mu","difmod","difmod_y","taumod"),
                       n.chains = 3,
                       n.burnin = 2000,
@@ -306,8 +308,7 @@ m.year = jagsUI::jags(data = jg.dat,
                       modules = NULL)
 
 
-tosave = c(tosave,
-           list(m.year = m.year))
+tosave2 = c(list(m.year = m.year))
 
 ############ Same as above but by strataum: Bayesian model estimating the difference in fit among models while accounting for the uncertainty in the point-wise loo
 ncounts = nrow(alldat)
@@ -336,7 +337,7 @@ jg.dat = list(
 ############ Bayesian model estimating the difference in fit among models and years while accounting for the uncertainty in the point-wise loo
 
 m.strat = jagsUI::jags(data = jg.dat,
-                      model.file = "jags.mod.loo.strat.txt",
+                      model.file = "summary_models/jags.mod.loo.strat.txt",
                       parameters.to.save = c("mod","tau.mu","difmod","difmod_s","taumod"),
                       n.chains = 3,
                       n.burnin = 2000,
@@ -346,11 +347,11 @@ m.strat = jagsUI::jags(data = jg.dat,
                       modules = NULL)
 
 
-tosave = c(tosave,
+tosave2 = c(tosave2,
            list(m.strat = m.strat))
 
 
-save(list = c("tosave"),file = paste0(sp_dir,"saved objects2.RData"))
+save(list = c("tosave2"),file = paste0(sp_dir,"saved objects2.RData"))
 
 
 
