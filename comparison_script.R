@@ -10,9 +10,9 @@ library(lme4)
 models = c("gamye","gam","firstdiff","slope")
 heavy_tailed = TRUE #all models use the t-distribution to model extra-Poisson variance
 
-species_to_run = c("Wood Thrush", "American Kestrel","Barn Swallow")
+species_to_run = c("Wood Thrush", "American Kestrel","Barn Swallow","Chestnut-collared Longspur","Cooper's Hawk")
 
-for(species in species_to_run[1]){
+for(species in species_to_run[1:4]){
 
 sp_dir = paste0("output/",species,"/")
 #### calculate all annual indices (strata and continental)
@@ -165,6 +165,7 @@ labl_obs = unique(indcont[which(indcont$Year == 1970),c("Year","obs_mean")])
 labl_obs$label = "Observed mean counts"
 cont_over = ggplot(data = indcont,aes(x = Year,y = Index,group = model))+
   theme_classic()+
+  labs(title = paste(species,"Continental"))+
   geom_ribbon(aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975,fill = model),alpha = 0.2)+
   geom_line(aes(colour = model),size = 2)+
   geom_point(aes(x = Year,y = obs_mean),colour = grey(0.7))+
@@ -233,6 +234,7 @@ for(pp in unique(indstrata$Region)){
   labl_obs$label = "Observed mean counts"
   strat_over = ggplot(data = indstrat,aes(x = Year,y = Index,group = model))+
     theme_classic()+
+    labs(title = paste(species,pp))+
     geom_ribbon(aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975,fill = model),alpha = 0.2)+
     geom_line(aes(colour = model),size = 2)+
     geom_point(aes(x = Year,y = obs_mean),colour = grey(0.7))+
@@ -265,7 +267,7 @@ save(list = c("tosave"),file = paste0(sp_dir,"saved objects.RData"))
 
 
 
-for(species in species_to_run[1]){
+for(species in species_to_run[1:4]){
   
   sp_dir = paste0("output/",species,"/")
   
