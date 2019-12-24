@@ -5,8 +5,8 @@ model
     fit[j] ~ dnorm(fit_true[j],prec[j])
   }
   for(i in 1:nmodels){
-    mod[i] <- n_mod[i]*-1
-    n_mod[i] ~ dgamma(0.001,0.001)
+    mod[i] ~ dnorm(-2,0.01) T(,0)
+
   for(y in 1:nyears){
     mod_y[i,y] ~ dnorm(mod[i],taumod)
       }

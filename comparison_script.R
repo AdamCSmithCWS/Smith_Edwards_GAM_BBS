@@ -4,15 +4,14 @@ library(ggplot2)
 library(ggrepel)
 library(ggforce)
 library(tidyverse)
-library(lme4)
 
 
 models = c("gamye","gam","firstdiff","slope")
 heavy_tailed = TRUE #all models use the t-distribution to model extra-Poisson variance
 
-species_to_run = c("Wood Thrush", "American Kestrel","Barn Swallow","Chestnut-collared Longspur","Cooper's Hawk")
+species_to_run = c("Wood Thrush", "American Kestrel","Barn Swallow","Chestnut-collared Longspur","Cooper's Hawk","Ruby-throated Hummingbird")
 
-for(species in species_to_run[1:4]){
+for(species in species_to_run[5:6]){
 
 sp_dir = paste0("output/",species,"/")
 #### calculate all annual indices (strata and continental)
@@ -92,7 +91,7 @@ for(m in models){
     
  true_index <- which(ki == kk)
 
-   load(file = paste0(m_dir_ext, "/cv/k_", kk, " removed.RData"))
+   load(file = paste0(m_dir_ext, "cv/k_", kk, " removed.RData"))
     
     lambda.posterior = jags_mod_loo$sims.list$LambdaSubset
     
@@ -111,10 +110,10 @@ for(m in models){
   dat.df$ki = jags_data$ki
   
   dat.df[,"mean.loo"] <- apply(loo,MARGIN = 2,FUN = mean) #the point-wise mean of the posterior distributions of the log probability of the left-out counts given the model and the parameter estimates
-  dat.df[,"sd.loo"] <- apply(loo,MARGIN = 2,FUN = sd) #the point-wise mean of the posterior distributions of the log probability of the left-out counts given the model and the parameter estimates
-  dat.df[,"prec.loo"] <- 1/(dat.df[,"sd.loo"]^2) #the point-wise mean of the posterior distributions of the log probability of the left-out counts given the model and the parameter estimates
+  dat.df[,"sd.loo"] <- apply(loo,MARGIN = 2,FUN = sd) #the point-wise sd of the posterior distributions of the log probability of the left-out counts given the model and the parameter estimates
+  dat.df[,"prec.loo"] <- 1/(dat.df[,"sd.loo"]^2) #the point-wise precision of the posterior distributions of the log probability of the left-out counts given the model and the parameter estimates
   
-  for(q in c(0.5,0.025,0.05,0.095,0.0975)){
+  for(q in c(0.5,0.025,0.05,0.95,0.975)){
     dat.df[,paste0("q",q,".loo")] <- apply(loo,MARGIN = 2,FUN = quantile,probs = q)
     
   } #calculates the quantiles of the posterior distributions of the log probability of the left-out counts given the model and the parameter estimates
@@ -135,6 +134,20 @@ for(m in models){
   
   
 } ### end indices and trends calculations
+
+alldat$unit = factor(paste(alldat$Stratum,alldat$Route,alldat$Year,sep = "_"))
+
+# x11()
+# plot(alldat$prec.loo,1/((alldat$q0.975.loo - alldat$q0.025.loo)/(1.96*2))^2)
+# plot(alldat$q0.5.loo,alldat$mean.loo)
+# plot(alldat$q0.5.loo,((alldat$q0.975.loo - alldat$q0.025.loo)/(1.96*2))^2)
+
+# abline(0,1)
+#above suggests that the raw sd calculation is an overestimate of the error, and prone to some extreme values, likely because the point-wise loo stats have some very large tails
+# replace with an alternative measure of precision that should be less sensitive to the tails
+
+alldat$prec.loo <- 1/((alldat$q0.975.loo - alldat$q0.025.loo)/(1.96*2))^2
+
 
 write.csv(alldat,paste0(sp_dir," all models point-wise log prob.csv"))
 
@@ -255,25 +268,26 @@ dev.off()
 
 #### overall fit comparisons.
 
-alldat$prec.loo = 1/((alldat$q0.0975.loo - alldat$q0.025.loo)/(1.96*2))^2
-alldat$unit = factor(paste(alldat$Stratum,alldat$Route,alldat$Year,sep = "_"))
+#alldat$prec.loo = 1/((alldat$q0.0975.loo - alldat$q0.025.loo)/(1.96*2))^2
 
 save(list = c("tosave"),file = paste0(sp_dir,"saved objects.RData"))
-
-
+torm = c(names(tosave)[-which(names(tosave) %in% c("species","models"))],"jags_data","loo","lambda.posterior","dat.df","indcont","indcont2","indstrat")
+rm(list = c("tosave",torm))
 
 }#species loop
 
 
 
 
-for(species in species_to_run[1:4]){
+for(species in species_to_run[3:6]){
   
   sp_dir = paste0("output/",species,"/")
   
   load(paste0(sp_dir,"saved objects.RData"))
 ############ Bayesian model estimating the difference in fit among models while accounting for the uncertainty in the point-wise loo
-ncounts = nrow(alldat)
+alldat = tosave$alldat
+  
+  ncounts = nrow(alldat)
 fit = alldat$q0.5.loo
 prec = alldat$prec.loo
 modl = as.integer(factor(alldat$model,levels = models,ordered = T))
@@ -353,11 +367,43 @@ tosave2 = c(tosave2,
            list(m.strat = m.strat))
 
 
+
+# 
+
+
+############ Same as above but overall: Bayesian model estimating the difference in fit among models while accounting for the uncertainty in the point-wise loo
+jg.dat = list(
+  ncounts = ncounts,
+  fit = fit,
+  prec = prec,
+  modl = modl,
+  unit = unit,
+  nunits = nunits,
+  nmodels = nmodels
+)
+
+
+############ Bayesian model estimating the difference in fit among models and years while accounting for the uncertainty in the point-wise loo
+
+m.overall = jagsUI::jags(data = jg.dat,
+                       model.file = "summary_models/jags.mod.loo.overall.txt",
+                       parameters.to.save = c("mod","tau.mu","difmod"),
+                       n.chains = 3,
+                       n.burnin = 2000,
+                       n.iter = 10000,
+                       n.thin = 10,
+                       parallel = T,
+                       modules = NULL)
+
+
+tosave2 = c(tosave2,
+            list(m.overall = m.overall))
+
+
 save(list = c("tosave2"),file = paste0(sp_dir,"saved objects2.RData"))
 
 
 
-# 
 # modl.overall <- lmer(data = alldat,formula = q0.5.loo ~ model + (1|unit),weights = prec)
 # newdat <- data.frame(model = models,
 #                      unit = 1,

@@ -1,0 +1,28 @@
+model
+{
+  for(j in 1:ncounts){
+    fit_true[j] <- mod_y[modl[j]] + mu[unit[j]]
+    fit[j] ~ dnorm(fit_true[j],prec[j])
+  }
+  for(i in 1:nmodels){
+    mod[i] <- n_mod[i]*-1
+    n_mod[i] ~ dgamma(0.001,0.001)
+  }
+
+  for(u in 1:nunits){
+    mu[u] ~ dnorm(0,tau.mu)
+  }
+  tau.mu ~ dgamma(0.001,0.001)
+  taumod ~ dgamma(0.001,0.001)
+
+difmod[1] <- mod[1]-mod[2]
+difmod[2] <- mod[1]-mod[3]
+difmod[3] <- mod[1]-mod[4]
+difmod[4] <- mod[2]-mod[3]
+difmod[5] <- mod[2]-mod[4]
+difmod[6] <- mod[3]-mod[4]
+
+
+
+}#end model
+
