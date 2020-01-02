@@ -29,7 +29,15 @@ names(contrast_full_names) = contr_names
 
 heavy_tailed = TRUE #all models use the t-distribution to model extra-Poisson variance
 
-for(species in c("American Kestrel","Barn Swallow","Wood Thrush","Chestnut-collared Longspur","Cooper's Hawk","Ruby-throated Hummingbird")){
+
+demo_sp <- c("American Kestrel",
+             "Barn Swallow",
+             "Wood Thrush",
+             "Chestnut-collared Longspur",
+             "Cooper's Hawk",
+             "Ruby-throated Hummingbird")
+
+for(species in demo_sp){
   
 
   
@@ -51,7 +59,7 @@ dif_mod_year = as.data.frame(tosave2$m.year$summary[wparam,])
 names(dif_mod_year)[3:7] <- c("lci","lqrt","med","uqrt","uci")
 dif_mod_year$Contrast = rep(1:6,times = jags_data$nyears)
 dif_mod_year$Year = rep(1:jags_data$nyears,each = 6)+1965
-
+dif_mod_year$species = species
 
 dif_mod_year$Contrast_name = rep(contr_names,times = jags_data$nyears)
 dif_mod_year$Contrast_full_name = rep(contrast_full_names,times = jags_data$nyears)
@@ -125,7 +133,6 @@ dev.off()
 
 
 
-
 ########################## geographic summary
 
 
@@ -141,6 +148,7 @@ dif_mod_strat = as.data.frame(tosave2$m.strat$summary[wparam,])
 names(dif_mod_strat)[3:7] <- c("lci","lqrt","med","uqrt","uci")
 dif_mod_strat$Contrast = rep(1:6,times = jags_data$nstrat)
 dif_mod_strat$Stratum = rep(1:jags_data$nstrat,each = 6)
+dif_mod_strat$species = species
 
 
 dif_mod_strat$Contrast_name = rep(contr_names,times = jags_data$nstrat)
@@ -232,7 +240,7 @@ wparam = paste0("difmod[",6:1,"]")
 dif_mod = as.data.frame(tosave2$m.overall$summary[wparam,])
 names(dif_mod)[3:7] <- c("lci","lqrt","med","uqrt","uci")
 dif_mod$Contrast = 6:1
-
+dif_mod$species = species
 
 dif_mod$Contrast_name = contr_names[dif_mod$Contrast]
 dif_mod$Contrast_full_name = contrast_full_names[dif_mod$Contrast]
@@ -261,7 +269,72 @@ dev.off()
 
 
 
+if(species == demo_sp[1]){
+  dif_mod_year_out = dif_mod_year
+  dif_mod_strat_out = dif_mod_strat
+  dif_mod_out = dif_mod
+}else{
+  dif_mod_year_out = rbind(dif_mod_year_out,dif_mod_year)
+  dif_mod_strat_out = rbind(dif_mod_strat_out,dif_mod_strat)
+  dif_mod_out = rbind(dif_mod_out,dif_mod)
+}
+
+
 
 }
+save(list = c("dif_mod_year_out","dif_mod_strat_out","dif_mod_out","models","contrast_full_names","demo_sp"),
+     file = "comparison_summary_output.RData")
+
+
+
+fmod <- function(x){
+  str_sub(x,start = 1,end = str_locate(x,pattern = " vs ")[,1]-1)
+}
+smod <- function(x){
+  str_sub(x,start = str_locate(x,pattern = " vs ")[,2]+1,end = str_length(x))
+}
+
+dif_mod_out$M1 = paste("Favours",fmod(dif_mod_out$Contrast_full_name))
+dif_mod_out$M2 = paste("Favours",smod(dif_mod_out$Contrast_full_name))
+
+
+dif_mod_labs = filter(dif_mod_out,species == demo_sp[1])
+dif_mod_labs$M1loc = 0.0025
+dif_mod_labs$M2loc = -0.0025
+
+
+# overall summary graphs --------------------------------------------------
+
+overall.comparison = ggplot(data = dif_mod_out,aes(x = Contrast_full_name,y = med,group = species,colour = species))+
+  #coord_cartesian(ylim = c(-0.05,0.05))+
+  theme_minimal()+
+  # theme(legend.position = "none",
+  #       axis.text.x = element_text(angle = 90))+
+  #labs(title = paste("Overall cross validation comparison"))+
+  ylab("Mean difference in point-wise log-probability")+
+  xlab("")+
+  geom_hline(yintercept = 0,colour = grey(0.2),alpha = 0.2)+
+  geom_point(position = position_dodge(width = 0.2))+
+  geom_linerange(aes(x = Contrast_full_name,ymin = lci,ymax = uci),
+                 alpha = 0.5,position = position_dodge(width = 0.2))+
+  geom_text(inherit.aes = F,data = dif_mod_labs,aes(x = Contrast_full_name,y = M1loc,label = M1),show.legend = F,colour = grey(0.3),nudge_x = -0.2)+
+  geom_text(inherit.aes = F,data = dif_mod_labs,aes(x = Contrast_full_name,y = M2loc,label = M2),show.legend = F,colour = grey(0.3),nudge_x = -0.2)+
+  # annotate(geom = "text",x = 0.5,y = 0.005,label = "Favours first")+
+  # annotate(geom = "text",x = 0.5,y = -0.005,label = "Favours second")+
+  scale_x_discrete(position = "top",labels = NULL)+
+  guides(colour = guide_legend(reverse = T))+
+  coord_flip()
+
+
+pdf(paste0("overall simple cross validation.pdf"),
+    width = 7,
+    height = 5)
+print(overall.comparison)
+dev.off()
+
+
+
+
+
 
 
