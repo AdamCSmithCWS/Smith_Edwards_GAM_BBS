@@ -11,7 +11,7 @@ heavy_tailed = TRUE #all models use the t-distribution to model extra-Poisson va
 
 species_to_run = c("Wood Thrush", "American Kestrel","Barn Swallow","Chestnut-collared Longspur","Cooper's Hawk","Ruby-throated Hummingbird")
 
-for(species in species_to_run[5:6]){
+for(species in species_to_run){
 
 sp_dir = paste0("output/",species,"/")
 #### calculate all annual indices (strata and continental)
