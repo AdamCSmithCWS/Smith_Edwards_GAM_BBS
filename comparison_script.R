@@ -279,7 +279,7 @@ rm(list = c("tosave",torm))
 
 
 
-for(species in species_to_run[3:6]){
+for(species in species_to_run){
   
   sp_dir = paste0("output/",species,"/")
   
@@ -314,7 +314,7 @@ nyears = nyears
 ############ Bayesian model estimating the difference in fit among models and years while accounting for the uncertainty in the point-wise loo
 
 m.year = jagsUI::jags(data = jg.dat,
-                      model.file = "summary_models/jags.mod.loo.txt",
+                      model.file = "summary_models/jags.mod.loo.year.txt",
                       parameters.to.save = c("mod","tau.mu","difmod","difmod_y","taumod"),
                       n.chains = 3,
                       n.burnin = 2000,
