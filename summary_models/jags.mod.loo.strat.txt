@@ -1,38 +1,23 @@
 model
 {
   for(j in 1:ncounts){
-    fit_true[j] <- mod_s[modl[j],strat[j]] + mu[unit[j]]
-    fit[j] ~ dnorm(fit_true[j],prec[j])
+    dif_true[j] <- difmod_s[strat[j]]
+    dif[j] ~ dt(dif_true[j],tau,nu)
   }
-  for(i in 1:nmodels){
-    mod[i] ~ dnorm(-2,0.01) T(,0)
 
-  for(s in 1:nstrat){
-    mod_s[i,s] ~ dnorm(mod[i],taumod)
+
+     difmod ~ dnorm(0,0.001)
+    for(y in 1:nstrat){
+    difmod_sx[y] ~ dnorm(0,taus)
+    difmod_s[y] <- difmod + difmod_sx[y]
       }
-  }
+  
 
-  for(u in 1:nunits){
-    mu[u] ~ dnorm(0,tau.mu)
-  }
-  tau.mu ~ dgamma(0.001,0.001)
-  taumod ~ dgamma(0.001,0.001)
+	nu ~ dgamma(2, 0.1) #
+  tau ~ dgamma(0.001,0.001)
+  tauy ~ dgamma(0.001,0.001)
 
-difmod[1] <- mod[1]-mod[2]
-difmod[2] <- mod[1]-mod[3]
-difmod[3] <- mod[1]-mod[4]
-difmod[4] <- mod[2]-mod[3]
-difmod[5] <- mod[2]-mod[4]
-difmod[6] <- mod[3]-mod[4]
 
-  for(s in 1:nstrat){
-difmod_s[1,s] <- mod_s[1,s]-mod_s[2,s]
-difmod_s[2,s] <- mod_s[1,s]-mod_s[3,s]
-difmod_s[3,s] <- mod_s[1,s]-mod_s[4,s]
-difmod_s[4,s] <- mod_s[2,s]-mod_s[3,s]
-difmod_s[5,s] <- mod_s[2,s]-mod_s[4,s]
-difmod_s[6,s] <- mod_s[3,s]-mod_s[4,s]
-  }
 
 }#end model
 

@@ -1,40 +1,23 @@
 model
 {
   for(j in 1:ncounts){
-    fit_true[j] <- mod_y[modl[j],year[j]] + mu[unit[j]]
-    fit[j] ~ dnorm(fit_true[j],prec[j])
+    dif_true[j] <- difmod_group[group[j]]
+    dif[j] ~ dt(dif_true[j],tau,nu)
   }
-  for(i in 1:nmodels){
-    mod[i] ~ dnorm(-2,0.01) T(,0)
 
-    mod_y[i,1] ~ dnorm(mod[i],taumod)
-    
-    for(y in 2:nyears){
-    mod_y[i,y] ~ dnorm(mod_y[i,y-1],tauy)
+
+     difmod ~ dnorm(0,0.001)
+    for(y in 1:ngroups){
+    difmod_gx[y] ~ dnorm(0,taugroup)
+    difmod_group[y] <- difmod + difmod_gx[y]
       }
-  }
+  
 
-  for(u in 1:nunits){
-    mu[u] ~ dnorm(0,tau.mu)
-  }
-  tau.mu ~ dgamma(0.001,0.001)
-  taumod ~ dgamma(0.001,0.001)
+	nu ~ dgamma(2, 0.1) #
+  tau ~ dgamma(0.001,0.001)
+  taugroup ~ dgamma(0.001,0.001)
 
-difmod[1] <- mod[1]-mod[2]
-difmod[2] <- mod[1]-mod[3]
-difmod[3] <- mod[1]-mod[4]
-difmod[4] <- mod[2]-mod[3]
-difmod[5] <- mod[2]-mod[4]
-difmod[6] <- mod[3]-mod[4]
 
-  for(y in 1:nyears){
-difmod_y[1,y] <- mod_y[1,y]-mod_y[2,y]
-difmod_y[2,y] <- mod_y[1,y]-mod_y[3,y]
-difmod_y[3,y] <- mod_y[1,y]-mod_y[4,y]
-difmod_y[4,y] <- mod_y[2,y]-mod_y[3,y]
-difmod_y[5,y] <- mod_y[2,y]-mod_y[4,y]
-difmod_y[6,y] <- mod_y[3,y]-mod_y[4,y]
-  }
 
 }#end model
 

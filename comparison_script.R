@@ -96,12 +96,12 @@ for(m in models){
     lambda.posterior = jags_mod_loo$sims.list$LambdaSubset
     
     for(i in 1:length(true_index)){
-    loo[,true_index[i]] = dpois(true_count[true_index[i]], lambda.posterior[,i],log = T)
+    loo[,true_index[i]] = dpois(true_count[true_index[i]], lambda.posterior[,i],log = F)
   }
     
   }
   
-  save(list = c("loo"),file = paste0(m_dir,"loo.RData"))
+  #save(list = c("loo"),file = paste0(m_dir,"loo.RData"))
   t2 = Sys.time()
   t2-t1
   
@@ -109,18 +109,18 @@ for(m in models){
   dat.df = get_prepared_data(jags_data = jags_data)
   dat.df$ki = jags_data$ki
   
-  dat.df[,"mean.loo"] <- apply(loo,MARGIN = 2,FUN = mean) #the point-wise mean of the posterior distributions of the log probability of the left-out counts given the model and the parameter estimates
-  dat.df[,"sd.loo"] <- apply(loo,MARGIN = 2,FUN = sd) #the point-wise sd of the posterior distributions of the log probability of the left-out counts given the model and the parameter estimates
-  dat.df[,"prec.loo"] <- 1/(dat.df[,"sd.loo"]^2) #the point-wise precision of the posterior distributions of the log probability of the left-out counts given the model and the parameter estimates
+  dat.df[,"mean.loo"] <- log(apply(loo,MARGIN = 2,FUN = mean)) #the point-wise mean of the posterior distributions of the log probability of the left-out counts given the model and the parameter estimates
+  #dat.df[,"sd.loo"] <- apply(loo,MARGIN = 2,FUN = sd) #the point-wise sd of the posterior distributions of the log probability of the left-out counts given the model and the parameter estimates
+  #dat.df[,"prec.loo"] <- 1/(dat.df[,"sd.loo"]^2) #the point-wise precision of the posterior distributions of the log probability of the left-out counts given the model and the parameter estimates
   
-  for(q in c(0.5,0.025,0.05,0.95,0.975)){
-    dat.df[,paste0("q",q,".loo")] <- apply(loo,MARGIN = 2,FUN = quantile,probs = q)
+  for(q in c(0.5,0.025,0.975)){
+    dat.df[,paste0("q",q,".loo")] <- log(apply(loo,MARGIN = 2,FUN = quantile,probs = q))
     
   } #calculates the quantiles of the posterior distributions of the log probability of the left-out counts given the model and the parameter estimates
   
   dat.df$model = m
   
-  write.csv(dat.df,paste0(m_dir," point-wise log prob.csv"))
+  write.csv(dat.df,paste0(m_dir," log point-wise posterior prob.csv"))
   
   
   if(m == models[1]){
@@ -146,7 +146,7 @@ alldat$unit = factor(paste(alldat$Stratum,alldat$Route,alldat$Year,sep = "_"))
 #above suggests that the raw sd calculation is an overestimate of the error, and prone to some extreme values, likely because the point-wise loo stats have some very large tails
 # replace with an alternative measure of precision that should be less sensitive to the tails
 
-alldat$prec.loo <- 1/((alldat$q0.975.loo - alldat$q0.025.loo)/(1.96*2))^2
+# alldat$prec.loo <- 1/((alldat$q0.975.loo - alldat$q0.025.loo)/(1.96*2))^2
 
 
 write.csv(alldat,paste0(sp_dir," all models point-wise log prob.csv"))
@@ -279,6 +279,40 @@ rm(list = c("tosave",torm))
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+library(bbsBayes)
+library(ggplot2)
+library(ggrepel)
+library(ggforce)
+library(tidyverse)
+
+
+
+models = c("gamye","gam","firstdiff","slope")
+heavy_tailed = TRUE #all models use the t-distribution to model extra-Poisson variance
+
+species_to_run = c("Wood Thrush", "American Kestrel","Barn Swallow","Chestnut-collared Longspur","Cooper's Hawk","Ruby-throated Hummingbird")
+
+
 for(species in species_to_run){
   
   sp_dir = paste0("output/",species,"/")
@@ -286,183 +320,215 @@ for(species in species_to_run){
   load(paste0(sp_dir,"saved objects.RData"))
 ############ Bayesian model estimating the difference in fit among models while accounting for the uncertainty in the point-wise loo
 alldat = tosave$alldat
-  
-  ncounts = nrow(alldat)
-fit = alldat$q0.5.loo
-prec = alldat$prec.loo
-modl = as.integer(factor(alldat$model,levels = models,ordered = T))
-unit = as.integer(factor(alldat$unit))
-nunits = max(unit)
-nmodels = max(modl)
-year = alldat$Year-(min(alldat$Year)-1)
-nyears = max(year)
-midyear = floor(nyears/2)
-
-jg.dat = list(
-  ncounts = ncounts,
-fit = fit,
-prec = prec,
-modl = modl,
-unit = unit,
-nunits = nunits,
-nmodels = nmodels,
-year = year,
-nyears = nyears
-)
 
 
-############ Bayesian model estimating the difference in fit among models and years while accounting for the uncertainty in the point-wise loo
 
-m.year = jagsUI::jags(data = jg.dat,
-                      model.file = "summary_models/jags.mod.loo.year.txt",
-                      parameters.to.save = c("mod","tau.mu","difmod","difmod_y","taumod"),
-                      n.chains = 3,
-                      n.burnin = 2000,
-                      n.iter = 10000,
-                      n.thin = 10,
-                      parallel = T,
-                      modules = NULL)
+######## standard Z-score pairwise comparisons
 
 
-tosave2 = c(list(m.year = m.year))
 
-############ Same as above but by strataum: Bayesian model estimating the difference in fit among models while accounting for the uncertainty in the point-wise loo
-ncounts = nrow(alldat)
-fit = alldat$q0.5.loo
-prec = alldat$prec.loo
-modl = as.integer(factor(alldat$model,levels = models,ordered = T))
-unit = as.integer(factor(alldat$unit))
-nunits = max(unit)
-nmodels = max(modl)
-strat = alldat$Stratum_Factored
-nstrat = max(strat)
+sum.loo <- alldat %>% group_by(model) %>% summarise(sum = sum(mean.loo), mean = mean(mean.loo),sd = sd(mean.loo))
 
-jg.dat = list(
-  ncounts = ncounts,
-  fit = fit,
-  prec = prec,
-  modl = modl,
-  unit = unit,
-  nunits = nunits,
-  nmodels = nmodels,
-  strat = strat,
-  nstrat = nstrat
-)
+sum.loo.y <- alldat %>% group_by(model,Year) %>% summarise(sum = sum(mean.loo), mean = mean(mean.loo))
 
 
-############ Bayesian model estimating the difference in fit among models and years while accounting for the uncertainty in the point-wise loo
-
-m.strat = jagsUI::jags(data = jg.dat,
-                      model.file = "summary_models/jags.mod.loo.strat.txt",
-                      parameters.to.save = c("mod","tau.mu","difmod","difmod_s","taumod"),
-                      n.chains = 3,
-                      n.burnin = 2000,
-                      n.iter = 10000,
-                      n.thin = 10,
-                      parallel = T,
-                      modules = NULL)
+loo.point <- alldat %>% select(.,Year:ki,model,mean.loo) %>%
+  pivot_wider(names_from = model,values_from = c(mean.loo),values_fn = list(mean.loo = mean))
 
 
-tosave2 = c(tosave2,
-           list(m.strat = m.strat))
+# alldat$modelprec = paste(alldat$model,"prec",sep = "_")
+# prec.loo.point <- alldat %>% select(.,Year:ki,modelprec,prec.loo) %>%
+#   pivot_wider(names_from = modelprec,values_from = c(prec.loo),values_fn = list(prec.loo = mean))
+# 
+# 
+# loo.point <- left_join(med.loo.point,prec.loo.point)
 
+### the mean function is required because (apparrently) there are two route-year combinations that are repeated in the dataset
+
+for(i in 1:nrow(loo.point)){
+  loo.point[i,"best"] <- models[which.max(loo.point[i,models])]
+}
+
+# contr_names = c(paste(models[1],models[2],sep = "_"),
+#                 paste(models[1],models[3],sep = "_"),
+#                 paste(models[1],models[4],sep = "_"),
+#                 paste(models[2],models[3],sep = "_"),
+#                 paste(models[2],models[4],sep = "_"),
+#                 paste(models[3],models[4],sep = "_")
+# )
+# 
+# contrast_full_names = gsub(gsub(toupper(contr_names),pattern = "FIRSTDIFF",replacement = "DIFFERENCE",fixed = T),pattern = "_",replacement = " vs ",fixed = T)
+# names(contrast_full_names) = contr_names
+
+
+loo.point[,"gamye_gam"] <- loo.point[,"gamye"] -loo.point[,"gam"]
+
+loo.point[,"gamye_firstdiff"] <- loo.point[,"gamye"] -loo.point[,"firstdiff"]
+
+loo.point[,"gamye_slope"] <- loo.point[,"gamye"] -loo.point[,"slope"]
+
+loo.point[,"gam_firstdiff"] <- loo.point[,"gam"] -loo.point[,"firstdiff"]
+
+loo.point[,"gam_slope"] <- loo.point[,"gam"] -loo.point[,"slope"]
+
+loo.point[,"firstdiff_slope"] <- loo.point[,"firstdiff"] -loo.point[,"slope"]
+
+write.csv(loo.point,paste0(sp_dir,"wide form lppd.csv"))
+
+
+
+qq = ggplot(data = loo.point,aes(sample = gamye_firstdiff))+
+  geom_qq()+
+  geom_qq_line()
+
+pdf(file = paste0(sp_dir,"qq plot gamye_firstdiff.pdf"))
+print(qq)
+dev.off()
+
+qq = ggplot(data = loo.point,aes(sample = gamye_slope))+
+  geom_qq()+
+  geom_qq_line()
+
+pdf(file = paste0(sp_dir,"qq plot gamye_slope.pdf"))
+print(qq)
+dev.off()
+
+
+#}#species
 
 
 # 
+# hist(loo.point$gamye_firstdiff)
+# #########
+# 
+# 
+#   
+year = loo.point$Year-(min(loo.point$Year)-1)
+nyears = max(year)
+
+strat = loo.point$Stratum_Factored
+nstrat = max(strat)
+
+#fit2 = loo.point$firstdiff
+ 
+ for(comp in c("gamye_firstdiff","gamye_slope")){
+
+   dif = as.numeric(unlist(loo.point[,comp]))
+   ncounts = length(dif)
+   
 
 
-############ Same as above but overall: Bayesian model estimating the difference in fit among models while accounting for the uncertainty in the point-wise loo
 jg.dat = list(
   ncounts = ncounts,
-  fit = fit,
-  prec = prec,
-  modl = modl,
-  unit = unit,
-  nunits = nunits,
-  nmodels = nmodels
+dif = dif,
+group = year,
+ngroups = nyears
 )
-
-
-############ Bayesian model estimating the difference in fit among models and years while accounting for the uncertainty in the point-wise loo
-
-m.overall = jagsUI::jags(data = jg.dat,
-                       model.file = "summary_models/jags.mod.loo.overall.txt",
-                       parameters.to.save = c("mod","tau.mu","difmod"),
+# 
+# 
+# ############ Bayesian model estimating the difference in fit among models and years while accounting for the uncertainty in the point-wise loo
+# 
+m.year = jagsUI::jags(data = jg.dat,
+                      model.file = "summary_models/jags.mod.loo.txt",
+                      parameters.to.save = c("nu","difmod","difmod_group","tau"),
+                      n.chains = 3,
+                      n.burnin = 2000,
+                      n.iter = 10000,
+                      n.thin = 10,
+                      parallel = T,
+                      modules = NULL)
+# 
+# 
+ tosave2 = c(list(m.year = m.year))
+# 
+# ############ Same as above but by strataum: Bayesian model estimating the difference in fit among models while accounting for the uncertainty in the point-wise loo
+ jg.dat = list(
+   ncounts = ncounts,
+   dif = dif,
+   group = strat,
+   ngroups = nstrat
+ )
+ # 
+ # 
+ # ############ Bayesian model estimating the difference in fit among models and years while accounting for the uncertainty in the point-wise loo
+ # 
+ m.strat = jagsUI::jags(data = jg.dat,
+                       model.file = "summary_models/jags.mod.loo.txt",
+                       parameters.to.save = c("nu","difmod","difmod_group","tau"),
                        n.chains = 3,
                        n.burnin = 2000,
                        n.iter = 10000,
                        n.thin = 10,
                        parallel = T,
                        modules = NULL)
+ # 
+  tosave2 = c(tosave2,
+            list(m.strat = m.strat))
+# 
+# 
+# 
+# # 
+# 
+# 
+# ############ Same as above but overall: Bayesian model estimating the difference in fit among models
+ 
+  jg.dat = list(
+    ncounts = ncounts,
+    dif = dif
+  )
+  # 
+  # 
+  # ############ Bayesian model estimating the difference in fit among models and years while accounting for the uncertainty in the point-wise loo
+  # 
+  m.overall = jagsUI::jags(data = jg.dat,
+                         model.file = "summary_models/jags.mod.loo.overall.txt",
+                         parameters.to.save = c("nu","difmod","tau"),
+                         n.chains = 3,
+                         n.burnin = 2000,
+                         n.iter = 10000,
+                         n.thin = 10,
+                         parallel = T,
+                         modules = NULL)
+  
+  
+# 
+# ############ Bayesian model estimating the difference in fit among models
+# 
+ tosave2 = c(tosave2,
+             list(m.overall = m.overall))
 
+ 
+ if(comp == "gamye_firstdiff"){
+   tosave2out = list(gamye_firstdiff = tosave2,
+                   gamye_slope = list())
+ }else{
+                     tosave2out[["gamye_slope"]] = tosave2
+                     }
 
-tosave2 = c(tosave2,
-            list(m.overall = m.overall))
-
-
-save(list = c("tosave2"),file = paste0(sp_dir,"saved objects2.RData"))
-
-
-
-# modl.overall <- lmer(data = alldat,formula = q0.5.loo ~ model + (1|unit),weights = prec)
-# newdat <- data.frame(model = models,
-#                      unit = 1,
-#                      prec = mean(alldat$prec))
-# overall.preds = predict(modl.overall,newdata = newdat,re.form = NA,se.fit = T)
-# overall.boot = confint(modl.overall,parm = "modelgamye",nsim = 10,method = "boot")
-
-
-
-
-
-
-sum.loo <- alldat %>% group_by(model) %>% summarise(sum = sum(q0.5.loo), mean = mean(q0.5.loo),sd = sd(q0.5.loo))
-
-sum.loo.y <- alldat %>% group_by(model,Year) %>% summarise(sum = sum(q0.5.loo), mean = mean(q0.5.loo))
-
-
-med.loo.point <- alldat %>% select(.,Year:ki,model,q0.5.loo) %>%
-  pivot_wider(names_from = model,values_from = c(q0.5.loo),values_fn = list(q0.5.loo = mean))
-alldat$modelprec = paste(alldat$model,"prec",sep = "_")
-prec.loo.point <- alldat %>% select(.,Year:ki,modelprec,prec.loo) %>%
-  pivot_wider(names_from = modelprec,values_from = c(prec.loo),values_fn = list(prec.loo = mean))
-
-
-loo.point <- left_join(med.loo.point,prec.loo.point)
-
-### the mean function is required because (apparrently) there are two route-year combinations that are repeated in the dataset
-
-for(i in 1:nrow(loo.point)){
-  loo.point[i,"best"] <- models[which.max(loo.point[i,models])]
  }
 
-loo.point[,"gamye_gam"] <- loo.point[,"gamye"] -loo.point[,"gam"]
-
-loo.point[,"gamye_slope"] <- loo.point[,"gamye"] -loo.point[,"slope"]
-
-loo.point[,"gamye_firstdiff"] <- loo.point[,"gamye"] -loo.point[,"firstdiff"]
-
-loo.point[,"gam_slope"] <- loo.point[,"gam"] -loo.point[,"slope"]
-
-loo.point[,"gam_firstdiff"] <- loo.point[,"gam"] -loo.point[,"firstdiff"]
-
-loo.point[,"firstdiff_slope"] <- loo.point[,"firstdiff"] -loo.point[,"slope"]
-
-#mixed model examining the effect of strata and model on the fit
-# m_cont = lmer(data = alldat,formula = q0.5.loo ~ model + (1|unit) + (model|Stratum),weights = prec)
-# summary(m_cont)
-#  
 # 
 # 
+ save(list = c("tosave2"),file = paste0(sp_dir,comp,"saved objects2.RData"))
 # 
-# 
-# 
-# plot(alldat$q0.5.loo,log(alldat$prec)) ### this plot demonstrates that all of the extreme logprob values are very low precision
-# 
-# plot(log(alldat$Count),alldat$q0.5.loo)
+}
 
-
-write.csv(loo.point,paste0(sp_dir,"pointwise median  posterior log prob.csv"))
+# 
+# #mixed model examining the effect of strata and model on the fit
+# # m_cont = lmer(data = alldat,formula = q0.5.loo ~ model + (1|unit) + (model|Stratum),weights = prec)
+# # summary(m_cont)
+# #  
+# # 
+# # 
+# # 
+# # 
+# # 
+# # plot(alldat$q0.5.loo,log(alldat$prec)) ### this plot demonstrates that all of the extreme logprob values are very low precision
+# # 
+# # plot(log(alldat$Count),alldat$q0.5.loo)
+# 
+# 
+# write.csv(loo.point,paste0(sp_dir,"pointwise median  posterior log prob.csv"))
 
 
 # 
@@ -491,7 +557,7 @@ write.csv(loo.point,paste0(sp_dir,"pointwise median  posterior log prob.csv"))
 #min(((beta.X[,k]-B.X[k])/posteriormean(sdbeta))^2,1)
 
 
-}
+#}
 
 
 

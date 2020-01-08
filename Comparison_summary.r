@@ -53,6 +53,13 @@ for(species in demo_sp){
 
 
 
+# distribution of the BPIC values -----------------------------------------
+
+  alldat = tosave$alldat
+  
+  
+  
+  
 wparam = paste0("difmod_y[",rep(1:6,times = jags_data$nyears),",",rep(1:jags_data$nyears,each = 6),"]")
 dif_mod_year = as.data.frame(tosave2$m.year$summary[wparam,])
 names(dif_mod_year)[3:7] <- c("lci","lqrt","med","uqrt","uci")

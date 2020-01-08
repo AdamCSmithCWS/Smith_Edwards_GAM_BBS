@@ -8,14 +8,14 @@ library(tidyverse)
 models = c("gamye","gam","firstdiff","slope")
 heavy_tailed = TRUE #all models use the t-distribution to model extra-Poisson variance
 
-species_to_run = c("Wood Thrush", "American Kestrel","Barn Swallow","Chestnut-collared Longspur","Cooper's Hawk")
+species_to_run = c("Wood Thrush", "American Kestrel","Barn Swallow","Chestnut-collared Longspur","Ruby-throated Hummingbird")
 
 
 model = models[1]
 
 
 
-for(species in species_to_run[3:4]){
+for(species in species_to_run){
   
   sp_dir = paste0("output/",species,"/")
 
@@ -86,7 +86,7 @@ strati$strat = factor(strati$strat)
 strati$prec = 1/((strati$uci-strati$lci)/(1.96*2))^2
 scounts = table(raw.dat$strat)
 for(s in 1:nstrata){
-  strati[which(strati$strat == s),"alpha"] = 1/(sqrt(scounts[s])/sqrt(max(scounts)))/2 
+  strati[which(strati$strat == s),"alpha"] = (1/(sqrt(scounts[s])/sqrt(min(scounts))))*0.5 
 }
 
 betaplot = ggplot(data = conti,aes(x = year,y = med))+
@@ -94,8 +94,8 @@ betaplot = ggplot(data = conti,aes(x = year,y = med))+
   labs(title = paste0(species," GAM components including hyperparameter"))+
   ylab("Population change based on GAM smooth (linear scale)")+
   theme(legend.position = "none")+
-  geom_line(data = strati,aes(x = year, y = med,colour = strat,group = strat,alpha = alpha))+
-  geom_line(colour = grey(0.3),size = 1.4)+
+  geom_line(data = strati,aes(x = year, y = med,group = strat),alpha = 0.1)+
+  geom_line(colour = grey(0.2),size = 1.4)+
   coord_cartesian(ylim = c(0,max(conti$med)*2))
 
 pdf(file = paste0(sp_dir,species," GAM components.pdf"),

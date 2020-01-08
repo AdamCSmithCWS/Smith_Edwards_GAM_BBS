@@ -68,7 +68,7 @@ dif_mod_labs$M2loc = -0.0025
 
 # overall summary graphs --------------------------------------------------
 
-overall.comparison = ggplot(data = dif_mod_out,aes(x = Contrast_full_name,y = med,group = species,colour = species))+
+overall.comparison = ggplot(data = dif_mod_out,aes(x = Contrast_full_name,y = mean,group = species,colour = species))+
   #coord_cartesian(ylim = c(-0.05,0.05))+
   theme_minimal()+
   # theme(legend.position = "none",
@@ -115,7 +115,7 @@ dif_mod_labs$M2loc = -0.015
 
 
 
-yearly.comparison = ggplot(data = dif_y_p,aes(x = Year,y = med,group = species,colour = species))+
+yearly.comparison = ggplot(data = dif_y_p,aes(x = Year,y = mean,group = species,colour = species))+
   #coord_cartesian(ylim = c(-0.05,0.05))+
   theme_minimal()+
   # theme(legend.position = "none",
@@ -125,7 +125,7 @@ yearly.comparison = ggplot(data = dif_y_p,aes(x = Year,y = med,group = species,c
   xlab("")+
   geom_hline(yintercept = 0,colour = grey(0.2),alpha = 0.2)+
   geom_point(position = position_dodge(width = 0.4))+
-  geom_linerange(aes(x = Year,ymin = lqrt,ymax = uqrt),
+  geom_linerange(aes(x = Year,ymin = lci,ymax = uci),
                  alpha = 0.3,position = position_dodge(width = 0.4))+
   geom_text(inherit.aes = F,data = dif_mod_labs,aes(x = Year,y = M1loc,label = M1),show.legend = F,colour = grey(0.3),nudge_x = 0.5,angle = 0)+
   geom_text(inherit.aes = F,data = dif_mod_labs,aes(x = Year,y = M2loc,label = M2),show.legend = F,colour = grey(0.3),nudge_x = 0.5,angle = 0)+
@@ -161,13 +161,13 @@ dif_s_p = filter(dif_mod_strat_out,Contrast_name %in% c("gamye_firstdiff"))
 mxcounts = max(dif_s_p$ncounts)
 
 
-dif_mod_labs = filter(dif_s_p, Stratum == 1)
+dif_mod_labs = dif_s_p[1,]
 dif_mod_labs$M1loc = 0.015
 dif_mod_labs$M2loc = -0.015
 dif_mod_labs$ncounts = mxcounts*0.8
 
 
-n.comparison = ggplot(data = dif_s_p,aes(x = ncounts,y = med,group = species,colour = species))+
+n.comparison = ggplot(data = dif_s_p,aes(x = ncounts,y = mean,group = species,colour = species))+
   #coord_cartesian(ylim = c(-0.05,0.05))+
   theme_minimal()+
    theme(legend.position = "none")+
@@ -215,8 +215,8 @@ for(comp in c("gamye_firstdiff","gamye_slope")){
   pdf(file = paste0(comp,"map of fit comparison.pdf"))
   for(spp in demo_sp){
   dif_s_p = filter(dif_mod_strat_out,Contrast_name == comp & species == spp)
-  dif_s_p$ST_12 = as.character(dif_s_p$Stratum_name)
-  dif_s_p$cl = cut(dif_s_p$med,breaks = c(-Inf,seq(-0.01,0.01,by = 0.005),Inf))
+  dif_s_p$ST_12 = as.character(dif_s_p$Stratum)
+  dif_s_p$cl = cut(dif_s_p$mean,breaks = c(-Inf,seq(-0.01,0.01,by = 0.005),Inf))
   
   modcomp_pallete <- brewer.pal(length(levels(dif_s_p$cl)),"RdYlBu") 
   names(modcomp_pallete) <- levels(dif_s_p$cl)
