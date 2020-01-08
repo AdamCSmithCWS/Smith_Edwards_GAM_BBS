@@ -394,7 +394,7 @@ print(qq)
 dev.off()
 
 
-#}#species
+}#species
 
 
 # 
@@ -402,7 +402,47 @@ dev.off()
 # #########
 # 
 # 
-#   
+#  
+
+
+# library(bbsBayes)
+# library(ggplot2)
+# library(ggrepel)
+# library(ggforce)
+# library(tidyverse)
+library(foreach)
+library(doParallel)
+
+
+
+# models = c("gamye","gam","firstdiff","slope")
+# heavy_tailed = TRUE #all models use the t-distribution to model extra-Poisson variance
+# 
+# species_to_run = c("Wood Thrush", "American Kestrel","Barn Swallow","Chestnut-collared Longspur","Cooper's Hawk","Ruby-throated Hummingbird")
+
+
+# running comparison models in parallel -----------------------------------
+
+# Set up parallel stuff
+n_cores <- length(species_to_run)
+cluster <- makeCluster(n_cores, type = "PSOCK")
+registerDoParallel(cluster)
+
+
+foreach(m = 1:length(species_to_run),
+        .packages = 'jagsUI',
+        .inorder = FALSE,
+        .errorhandling = "pass") %dopar%
+  {
+    
+
+    species = species_to_run[m]
+
+    sp_dir = paste0("output/",species,"/")
+    
+loo.point = read.csv(paste0(sp_dir,"wide form lppd.csv"),stringsAsFactors = F)
+
+    
 year = loo.point$Year-(min(loo.point$Year)-1)
 nyears = max(year)
 
@@ -435,8 +475,7 @@ m.year = jagsUI::jags(data = jg.dat,
                       n.burnin = 2000,
                       n.iter = 10000,
                       n.thin = 10,
-                      parallel = T,
-                      modules = NULL)
+                      parallel = F)
 # 
 # 
  tosave2 = c(list(m.year = m.year))
@@ -459,8 +498,7 @@ m.year = jagsUI::jags(data = jg.dat,
                        n.burnin = 2000,
                        n.iter = 10000,
                        n.thin = 10,
-                       parallel = T,
-                       modules = NULL)
+                       parallel = F)
  # 
   tosave2 = c(tosave2,
             list(m.strat = m.strat))
@@ -487,8 +525,7 @@ m.year = jagsUI::jags(data = jg.dat,
                          n.burnin = 2000,
                          n.iter = 10000,
                          n.thin = 10,
-                         parallel = T,
-                         modules = NULL)
+                         parallel = T)
   
   
 # 
@@ -509,9 +546,13 @@ m.year = jagsUI::jags(data = jg.dat,
 
 # 
 # 
- save(list = c("tosave2"),file = paste0(sp_dir,comp,"saved objects2.RData"))
+ save(list = c("tosave2out"),file = paste0(sp_dir,"saved objects2.RData"))
 # 
-}
+  }
+
+
+stopCluster(cl = cluster)
+
 
 # 
 # #mixed model examining the effect of strata and model on the fit

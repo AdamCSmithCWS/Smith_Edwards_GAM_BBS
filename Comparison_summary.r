@@ -49,33 +49,50 @@ for(species in demo_sp){
   load(paste0(sp_dir,"saved objects2.RData"))
 
 
-  jags_data = tosave2$m.year$model$cluster1$data()
+# extract the comparison model results and compile for graphing -----------
 
+  
+  for(comp in c("gamye_firstdiff","gamye_slope")){
+
+  jags_data = tosave2out[[comp]]$m.year$model$cluster1$data()
+ m.year = tosave2out[[comp]]$m.year
 
 
 # distribution of the BPIC values -----------------------------------------
 
-  alldat = tosave$alldat
+#  alldat = tosave$alldat
   
   
   
   
-wparam = paste0("difmod_y[",rep(1:6,times = jags_data$nyears),",",rep(1:jags_data$nyears,each = 6),"]")
-dif_mod_year = as.data.frame(tosave2$m.year$summary[wparam,])
-names(dif_mod_year)[3:7] <- c("lci","lqrt","med","uqrt","uci")
-dif_mod_year$Contrast = rep(1:6,times = jags_data$nyears)
-dif_mod_year$Year = rep(1:jags_data$nyears,each = 6)+(2018-jags_data$nyears)
-dif_mod_year$species = species
-
-dif_mod_year$Contrast_name = rep(contr_names,times = jags_data$nyears)
-dif_mod_year$Contrast_full_name = rep(contrast_full_names,times = jags_data$nyears)
-lbl = dif_mod_year[which(dif_mod_year$Year == 1995 & dif_mod_year$Contrast %in% c(2,3)),]
-lbl[which(lbl$Contrast == 2),"Year"] = lbl[which(lbl$Contrast == 2),"Year"]-0.25
-lbl[which(lbl$Contrast == 3),"Year"] = lbl[which(lbl$Contrast == 3),"Year"]+0.25
+wparam = paste0("difmod_group[",1:jags_data$ngroups,"]")
+dif_mod_year1 = as.data.frame(m.year$summary[wparam,])
+names(dif_mod_year1)[3:7] <- c("lci","lqrt","med","uqrt","uci")
 
 
+dif_mod_year1$Contrast_name = comp
+dif_mod_year1$Year = (1:jags_data$ngroups)+(2018-jags_data$ngroups)
+dif_mod_year1$species = species
+dif_mod_year1$Contrast_full_name = contrast_full_names[dif_mod_year1$Contrast_name]
 
-an_contr = ggplot(data = dif_mod_year[which(dif_mod_year$Contrast %in% c(2,3)),],aes(x = Year,y = mean,group = Contrast_name,colour = Contrast_name))+
+if(comp == "gamye_firstdiff"){
+  dif_mod_year = dif_mod_year1
+}else{
+  dif_mod_year = rbind(dif_mod_year,dif_mod_year1)
+}
+
+}
+
+
+
+
+lbl = dif_mod_year[which(dif_mod_year$Year == 1995),]
+lbl[which(lbl$Contrast == 2),"Year"] = lbl[which(lbl$Contrast_name == "gamye_firstdiff"),"Year"]-0.25
+lbl[which(lbl$Contrast == 3),"Year"] = lbl[which(lbl$Contrast_name == "gamye_slope"),"Year"]+0.25
+
+
+
+an_contr = ggplot(data = dif_mod_year,aes(x = Year,y = mean,group = Contrast_name,colour = Contrast_name))+
   geom_point(position = position_dodge(width = 0.75))+
   geom_linerange(aes(x = Year,ymin = lci,ymax = uci),position = position_dodge(width = 0.75),alpha = 0.5)+
   coord_cartesian(ylim = c(-0.03,0.03))+
@@ -87,8 +104,8 @@ an_contr = ggplot(data = dif_mod_year[which(dif_mod_year$Contrast %in% c(2,3)),]
   scale_x_continuous(breaks = c(seq(1970,2010,by = 10),2018))+
   geom_hline(yintercept = 0,colour = grey(0.2),alpha = 0.2)+
   geom_text_repel(data = lbl,aes(x = Year,y = lci,label = Contrast_full_name),nudge_y = -0.005)+
-   annotate(geom = "text",x = 2017-jags_data$nyears,y = 0.017,label = "Favours GAMYE",angle = 90)+
-   annotate(geom = "text",x = 2017-jags_data$nyears,y = -0.017,label = "Favours Alternate",angle = 90)  
+   annotate(geom = "text",x = 2017-jags_data$ngroups,y = 0.017,label = "Favours GAMYE",angle = 90)+
+   annotate(geom = "text",x = 2017-jags_data$ngroups,y = -0.017,label = "Favours Alternate",angle = 90)  
   
   
 pdf(paste0(sp_dir,species," annual cross validation.pdf"),
