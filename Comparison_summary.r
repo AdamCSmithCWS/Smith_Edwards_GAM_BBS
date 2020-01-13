@@ -47,14 +47,18 @@ for(species in demo_sp){
   load(paste0(sp_dir,"saved objects.RData"))
   
   load(paste0(sp_dir,"saved objects2.RData"))
-
+  loo.point = read.csv(paste0(sp_dir,"wide form lppd.csv"))
+  
 
 # extract the comparison model results and compile for graphing -----------
+
+# comparison accounting for annual variation ------------------------------
+
 
   
   for(comp in c("gamye_firstdiff","gamye_slope")){
 
-  jags_data = tosave2out[[comp]]$m.year$model$cluster1$data()
+  jags_data = tosave2out[[comp]]$m.year$model$data()
  m.year = tosave2out[[comp]]$m.year
 
 
@@ -95,7 +99,7 @@ lbl[which(lbl$Contrast == 3),"Year"] = lbl[which(lbl$Contrast_name == "gamye_slo
 an_contr = ggplot(data = dif_mod_year,aes(x = Year,y = mean,group = Contrast_name,colour = Contrast_name))+
   geom_point(position = position_dodge(width = 0.75))+
   geom_linerange(aes(x = Year,ymin = lci,ymax = uci),position = position_dodge(width = 0.75),alpha = 0.5)+
-  coord_cartesian(ylim = c(-0.03,0.03))+
+  #coord_cartesian(ylim = c(-0.03,0.03))+
   theme_minimal()+
   theme(legend.position = "none")+
   labs(title = paste(species,"GAMYE cross validation comparison, by year"))+
@@ -116,20 +120,39 @@ dev.off()
 
 
 
-## plot the overall differences in model fit by pairwise comparisons
+## plot the overall differences in model fit accounting for annual variation
 
 
-wparam = paste0("difmod[",6:1,"]")
-dif_mod = as.data.frame(tosave2$m.year$summary[wparam,])
-names(dif_mod)[3:7] <- c("lci","lqrt","med","uqrt","uci")
-dif_mod$Contrast = 6:1
+for(comp in c("gamye_firstdiff","gamye_slope")){
+  
 
 
-dif_mod$Contrast_name = contr_names[dif_mod$Contrast]
-dif_mod$Contrast_full_name = contrast_full_names[dif_mod$Contrast]
+  jags_data = tosave2out[[comp]]$m.year$model$data()
+  m.year = tosave2out[[comp]]$m.year
+  
+  wparam = "difmod"
+  dif_mod_year_over1 = data.frame(matrix(m.year$summary[wparam,],nrow = 1))
+  names(dif_mod_year_over1) <- names(m.year$summary[1,])
+  names(dif_mod_year_over1)[3:7] <- c("lci","lqrt","med","uqrt","uci")
+  
+  
+  dif_mod_year_over1$Contrast_name = comp
+  dif_mod_year_over1$species = species
+  dif_mod_year_over1$Contrast_full_name = contrast_full_names[dif_mod_year_over1$Contrast_name]
+  
+  if(comp == "gamye_firstdiff"){
+    dif_mod_year_over = dif_mod_year_over1
+  }else{
+    dif_mod_year_over = rbind(dif_mod_year_over,dif_mod_year_over1)
+  }
+  
+}
 
-overcont.y = ggplot(data = dif_mod,aes(x = Contrast_full_name,y = med))+
-  coord_cartesian(ylim = c(-0.05,0.05))+
+
+
+
+overcont.y = ggplot(data = dif_mod_year_over,aes(x = Contrast_full_name,y = med))+
+  #coord_cartesian(ylim = c(-0.05,0.05))+
   theme_minimal()+
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 90))+
@@ -139,8 +162,8 @@ overcont.y = ggplot(data = dif_mod,aes(x = Contrast_full_name,y = med))+
   geom_hline(yintercept = 0,colour = grey(0.2),alpha = 0.2)+
   geom_point()+
   geom_linerange(aes(x = Contrast_full_name,ymin = lci,ymax = uci),alpha = 0.5)+
-annotate(geom = "text",x = 0.2,y = 0.017,label = "Favours first",angle = 90)+
-  annotate(geom = "text",x = 0.2,y = -0.017,label = "Favours second",angle = 90)  
+annotate(geom = "text",x = 0.7,y = 0.5*max(dif_mod_year_over$uci),label = "Favours first",angle = 90)+
+  annotate(geom = "text",x = 0.7,y = -0.5*max(dif_mod_year_over$uci),label = "Favours second",angle = 90)  
 
 
 
@@ -154,60 +177,74 @@ dev.off()
 
 
 
+
 # Geographic Summaries ----------------------------------------------------
 
 
-
-
-
-
-jags_data = tosave2$m.strat$model$cluster1$data()
-
-strat.list = unique(tosave$alldat[,c("Stratum","Stratum_Factored")])
-names(strat.list) = c("Stratum_name","Stratum")
-
-wparam = paste0("difmod_s[",rep(1:6,times = jags_data$nstrat),",",rep(1:jags_data$nstrat,each = 6),"]")
-dif_mod_strat = as.data.frame(tosave2$m.strat$summary[wparam,])
-names(dif_mod_strat)[3:7] <- c("lci","lqrt","med","uqrt","uci")
-dif_mod_strat$Contrast = rep(1:6,times = jags_data$nstrat)
-dif_mod_strat$Stratum = rep(1:jags_data$nstrat,each = 6)
-dif_mod_strat$species = species
-
-dif_mod_strat$Contrast_name = rep(contr_names,times = jags_data$nstrat)
-dif_mod_strat$Contrast_full_name = rep(contrast_full_names,times = jags_data$nstrat)
-
-ncounts = tapply(jags_data$unit,jags_data$strat,FUN = function(x){length(unique(x))})
-for(i in 1:nrow(dif_mod_strat)){
-  dif_mod_strat[i,"ncounts"] <- ncounts[dif_mod_strat[i,"Stratum"]]
+for(comp in c("gamye_firstdiff","gamye_slope")){
+  
+  jags_data = tosave2out[[comp]]$m.strat$model$data()
+  m.strat = tosave2out[[comp]]$m.strat
+  
+  
+  # distribution of the BPIC values -----------------------------------------
+  
+  #  alldat = tosave$alldat
+  
+  
+  
+  
+  wparam = paste0("difmod_group[",1:jags_data$ngroups,"]")
+  dif_mod_strat1 = as.data.frame(m.strat$summary[wparam,])
+  names(dif_mod_strat1)[3:7] <- c("lci","lqrt","med","uqrt","uci")
+  
+ 
+  
+  dif_mod_strat1$Contrast_name = comp
+  dif_mod_strat1$Stratum_Factored = (1:jags_data$ngroups)
+  dif_mod_strat1$species = species
+  dif_mod_strat1$Contrast_full_name = contrast_full_names[dif_mod_strat1$Contrast_name]
+  
+  if(comp == "gamye_firstdiff"){
+    dif_mod_strat = dif_mod_strat1
+  }else{
+    dif_mod_strat = rbind(dif_mod_strat,dif_mod_strat1)
+  }
+  
 }
 
-#merge original strata names into output
-dif_mod_strat = merge(dif_mod_strat,strat.list,by = "Stratum",sort = F)
 
 
-lbl = dif_mod_strat[which(dif_mod_strat$ncounts == quantile(dif_mod_strat$ncounts,1) & dif_mod_strat$Contrast %in% c(2,3)),]
-# lbl[which(lbl$Contrast == 2),"ncounts"] = lbl[which(lbl$Contrast == 2),"ncounts"]*1.05
-# lbl[which(lbl$Contrast == 3),"ncounts"] = lbl[which(lbl$Contrast == 3),"ncounts"]*0.95
+
+strat.list = unique(loo.point[,c("Stratum","Stratum_Factored")])
+
+dif_mod_strat <- left_join(dif_mod_strat,strat.list,by = "Stratum_Factored")
+
+nbystrat <- group_by(loo.point,Stratum) %>% summarise(.,ncounts = n())
+dif_mod_strat <- left_join(dif_mod_strat,nbystrat,by = "Stratum")
 
 
-dif_mod_strat_p = dif_mod_strat[which(dif_mod_strat$Contrast %in% c(2,3)),]
+# lbl = dif_mod_strat[which(dif_mod_strat$strat == 1995),]
+# lbl[which(lbl$Contrast == 2),"strat"] = lbl[which(lbl$Contrast_name == "gamye_firstdiff"),"strat"]-0.25
+# lbl[which(lbl$Contrast == 3),"strat"] = lbl[which(lbl$Contrast_name == "gamye_slope"),"strat"]+0.25
+lbl = dif_mod_strat[which(dif_mod_strat$ncounts == quantile(dif_mod_strat$ncounts,1)),]
 
-str_contr = ggplot(data = dif_mod_strat_p,aes(x = ncounts,y = mean,group = Contrast_name,colour = Contrast_name))+
+
+str_contr = ggplot(data = dif_mod_strat,aes(x = ncounts,y = mean,group = Contrast_name,colour = Contrast_name))+
   geom_point(position = position_dodge(width = 0.75))+
-  #geom_linerange(aes(x = ncounts,ymin = lci,ymax = uci),position = position_dodge(width = 0.75),alpha = 0.2)+
-  #coord_cartesian(ylim = c(-0.05,0.05))+
-  geom_smooth(stat = "smooth",se = F)+
+  geom_linerange(aes(x = ncounts,ymin = lci,ymax = uci),position = position_dodge(width = 0.75),alpha = 0.5)+
+  coord_cartesian(ylim = c(-0.03,0.03))+
   theme_minimal()+
   theme(legend.position = "none")+
-  labs(title = paste(species,"geographic cross validation results by sample size"))+
-  xlab("Number of route*year counts")+
-  ylab("")+
-  #scale_x_continuous(breaks = 6)+
+  labs(title = paste(species,"GAMYE cross validation comparison, by strat"))+
+  ylab("Mean difference in point-wise log-probability")+
+  xlab("")+
+  #scale_x_continuous(breaks = c(seq(1970,2010,by = 10),2018))+
   geom_hline(yintercept = 0,colour = grey(0.2),alpha = 0.2)+
-  geom_text_repel(data = lbl,aes(x = ncounts,y = med,label = Contrast_full_name),nudge_y = -0.01)+
-  annotate(geom = "text",x = min(dif_mod_strat_p$ncounts,na.rm = T)*0.90,y = max(dif_mod_strat_p$med,na.rm = T)*0.90,label = "Favours GAMYE",angle = 90,hjust = 1)+
-  annotate(geom = "text",x = min(dif_mod_strat_p$ncounts,na.rm = T)*0.90,y = min(dif_mod_strat_p$med,na.rm = T)*0.90,label = "Favours Alternate",angle = 90,hjust = 0)  
-
+     geom_text_repel(data = lbl,aes(x = ncounts,y = med,label = Contrast_full_name),nudge_y = -0.01)+
+     annotate(geom = "text",x = min(dif_mod_strat$ncounts,na.rm = T)*0.90,y = max(dif_mod_strat$med,na.rm = T)*0.90,label = "Favours GAMYE",angle = 90,hjust = 1)+
+     annotate(geom = "text",x = min(dif_mod_strat$ncounts,na.rm = T)*0.90,y = min(dif_mod_strat$med,na.rm = T)*0.90,label = "Favours Alternate",angle = 90,hjust = 0)  
+  
 
 pdf(paste0(sp_dir,species," geographic cross validation.pdf"),
     width = 11,
@@ -217,22 +254,39 @@ dev.off()
 
 
 
+## plot the overall differences in model fit by pairwise comparisons
+
+
+for(comp in c("gamye_firstdiff","gamye_slope")){
+  
+  
+  
+  jags_data = tosave2out[[comp]]$m.strat$model$data()
+  m.strat = tosave2out[[comp]]$m.strat
+  
+  wparam = "difmod"
+  dif_mod_strat_over1 = data.frame(matrix(m.strat$summary[wparam,],nrow = 1))
+  names(dif_mod_strat_over1) <- names(m.strat$summary[1,])
+  names(dif_mod_strat_over1)[3:7] <- c("lci","lqrt","med","uqrt","uci")
+  
+  
+  dif_mod_strat_over1$Contrast_name = comp
+  dif_mod_strat_over1$species = species
+  dif_mod_strat_over1$Contrast_full_name = contrast_full_names[dif_mod_strat_over1$Contrast_name]
+  
+  if(comp == "gamye_firstdiff"){
+    dif_mod_strat_over = dif_mod_strat_over1
+  }else{
+    dif_mod_strat_over = rbind(dif_mod_strat_over,dif_mod_strat_over1)
+  }
+  
+}
 
 
 
 
 
-
-wparam = paste0("difmod[",6:1,"]")
-dif_mod = as.data.frame(tosave2$m.strat$summary[wparam,])
-names(dif_mod)[3:7] <- c("lci","lqrt","med","uqrt","uci")
-dif_mod$Contrast = 6:1
-
-
-dif_mod$Contrast_name = contr_names[dif_mod$Contrast]
-dif_mod$Contrast_full_name = contrast_full_names[dif_mod$Contrast]
-
-overcont.y = ggplot(data = dif_mod,aes(x = Contrast_full_name,y = med))+
+overcont.y = ggplot(data = dif_mod_strat_over,aes(x = Contrast_full_name,y = med))+
   #coord_cartesian(ylim = c(-0.05,0.05))+
   theme_minimal()+
   theme(legend.position = "none",
@@ -243,8 +297,8 @@ overcont.y = ggplot(data = dif_mod,aes(x = Contrast_full_name,y = med))+
   geom_hline(yintercept = 0,colour = grey(0.2),alpha = 0.2)+
   geom_point()+
   geom_linerange(aes(x = Contrast_full_name,ymin = lci,ymax = uci),alpha = 0.5)+
-  annotate(geom = "text",x = 0.2,y = 0.017,label = "Favours first",angle = 90)+
-  annotate(geom = "text",x = 0.2,y = -0.017,label = "Favours second",angle = 90)  
+  annotate(geom = "text",x = 0.7,y = 0.5*max(dif_mod_strat_over$uci),label = "Favours first",angle = 90)+
+  annotate(geom = "text",x = 0.7,y = -0.5*max(dif_mod_strat_over$uci),label = "Favours second",angle = 90)  
 
 
 
@@ -256,22 +310,59 @@ dev.off()
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## overall comparison, no stratification
 
 
 ### load overal model
+for(comp in c("gamye_firstdiff","gamye_slope")){
+  
+  jags_data = tosave2out[[comp]]$m.overall$model$cluster1$data()
+  m.overall = tosave2out[[comp]]$m.overall
+  
+  
+  # distribution of the BPIC values -----------------------------------------
+  
+  #  alldat = tosave$alldat
+  
+  
+  
+  
+  wparam = "difmod"
+  dif_mod_over1 = data.frame(matrix(m.overall$summary[wparam,],nrow = 1))
+  names(dif_mod_over1) <- names(m.overall$summary[1,])
+  names(dif_mod_over1)[3:7] <- c("lci","lqrt","med","uqrt","uci")
+  
+  
+  dif_mod_over1$Contrast_name = comp
+  dif_mod_over1$species = species
+  dif_mod_over1$Contrast_full_name = contrast_full_names[dif_mod_over1$Contrast_name]
+  
+  if(comp == "gamye_firstdiff"){
+    dif_mod = dif_mod_over1
+  }else{
+    dif_mod = rbind(dif_mod,dif_mod_over1)
+  }
+  
+}
 
 
-wparam = paste0("difmod[",6:1,"]")
-dif_mod = as.data.frame(tosave2$m.overall$summary[wparam,])
-names(dif_mod)[3:7] <- c("lci","lqrt","med","uqrt","uci")
-dif_mod$Contrast = 6:1
-dif_mod$species = species
 
-dif_mod$Contrast_name = contr_names[dif_mod$Contrast]
-dif_mod$Contrast_full_name = contrast_full_names[dif_mod$Contrast]
-
-overall.y = ggplot(data = dif_mod,aes(x = Contrast_full_name,y = med))+
+overall = ggplot(data = dif_mod,aes(x = Contrast_full_name,y = med))+
   #coord_cartesian(ylim = c(-0.05,0.05))+
   theme_minimal()+
   theme(legend.position = "none",
@@ -282,15 +373,15 @@ overall.y = ggplot(data = dif_mod,aes(x = Contrast_full_name,y = med))+
   geom_hline(yintercept = 0,colour = grey(0.2),alpha = 0.2)+
   geom_point()+
   geom_linerange(aes(x = Contrast_full_name,ymin = lci,ymax = uci),alpha = 0.5)+
-  annotate(geom = "text",x = 0.2,y = 0.017,label = "Favours first",angle = 90)+
-  annotate(geom = "text",x = 0.2,y = -0.017,label = "Favours second",angle = 90)  
+  annotate(geom = "text",x = 0.7,y = 0.5*max(dif_mod$uci),label = "Favours first",angle = 90)+
+  annotate(geom = "text",x = 0.7,y = -0.5*max(dif_mod$uci),label = "Favours second",angle = 90)  
 
 
 
 pdf(paste0(sp_dir,species,"  overall simple cross validation.pdf"),
     width = 7,
     height = 5)
-print(overall.y)
+print(overall)
 dev.off()
 
 
@@ -298,17 +389,21 @@ dev.off()
 if(species == demo_sp[1]){
   dif_mod_year_out = dif_mod_year
   dif_mod_strat_out = dif_mod_strat
+  dif_mod_year_over_out = dif_mod_year_over
+  dif_mod_strat_over_out = dif_mod_strat_over
   dif_mod_out = dif_mod
 }else{
   dif_mod_year_out = rbind(dif_mod_year_out,dif_mod_year)
   dif_mod_strat_out = rbind(dif_mod_strat_out,dif_mod_strat)
+  dif_mod_year_over_out = rbind(dif_mod_year_over_out,dif_mod_year_over)
+  dif_mod_strat_over_out = rbind(dif_mod_strat_over_out,dif_mod_strat_over)
   dif_mod_out = rbind(dif_mod_out,dif_mod)
 }
 
 
 
 }
-save(list = c("dif_mod_year_out","dif_mod_strat_out","dif_mod_out","models","contrast_full_names","demo_sp"),
+save(list = c("dif_mod_year_out","dif_mod_year_over_out","dif_mod_strat_out","dif_mod_strat_over_out","dif_mod_out","models","contrast_full_names","demo_sp"),
      file = "comparison_summary_output.RData")
 
 

@@ -57,11 +57,21 @@ models <- c("firstdiff", "gam", "gamye","slope")
 ###################################################
 # Analysis by Species X Model Combination
 ###################################################
+# Set up parallel stuff
+n_cores <- length(species_to_run)
+cluster <- makeCluster(n_cores, type = "PSOCK")
+registerDoParallel(cluster)
 
-for (species in species_to_run[c(5,4)])
-{
+
+foreach(m = 1:length(species_to_run),
+        .packages = 'bbsBayes',
+        .inorder = FALSE,
+        .errorhandling = "pass") %dopar%
+  {
+    
+ species = species_to_run[m]
   sp.dir = paste0("output/", species)
-  dir.create(sp.dir)
+  dir.create(sp.dir,showWarnings = F)
   
   
   #### identifying the K folds for cross-validation
@@ -87,23 +97,12 @@ for (species in species_to_run[c(5,4)])
     save(kk,file = sp.k)
   }
     
-    # Set up parallel stuff
-    n_cores <- length(models)
-    cluster <- makeCluster(n_cores, type = "PSOCK")
-    registerDoParallel(cluster)
-    
-    
-foreach(m = 1:4,
-        .packages = 'bbsBayes',
-        .inorder = FALSE,
-        .errorhandling = "pass") %dopar%
-    {
-      
-      model = models[m]
+   
+      model = "gamye"
       model_dir <- paste0(sp.dir,
                         "/",
                         model)
-    dir.create(model_dir)
+    dir.create(model_dir,showWarnings = F)
     
     jags_data <- prepare_jags_data(strat_data = stratified_data,
                                    species_to_run = species,
@@ -182,11 +181,12 @@ stopCluster(cl = cluster)
 
 
 
+for(species in species_to_run){
+  sp.dir = paste0("output/", species)
+  
 
 
-
-
-for(model in models[1:4]){
+for(model in models[3]){
     
     ##################### CROSS VALIDATION ########################
   model_dir <- paste0(sp.dir,
