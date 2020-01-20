@@ -5,7 +5,7 @@ model
   }
 
 
-     difmod ~ dnorm(0,0.001)
+     difmod ~ dnorm(0,1)
     
 
 	nu ~ dgamma(2, 0.1) #

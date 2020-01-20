@@ -262,7 +262,7 @@ an_contr = ggplot(data = dif_mod_year[which(dif_mod_year$Contrast %in% c(2,3)),]
    annotate(geom = "text",x = 2017-nyears,y = -0.017,label = "Favours Alternate",angle = 90)  
   
   
-pdf(paste0(sp_dir,species," annual cross validation.pdf"),
+pdf(paste0(sp_dir,species," simple annual cross validation.pdf"),
     width = 11,
     height = 8.5)
 print(an_contr)
@@ -312,7 +312,7 @@ str_contr = ggplot(data = dif_mod_strat_p,aes(x = ncounts,y = mean,group = Contr
   annotate(geom = "text",x = min(dif_mod_strat_p$ncounts,na.rm = T)*0.90,y = min(dif_mod_strat_p$mean,na.rm = T)*0.90,label = "Favours Alternate",angle = 90,hjust = 0)  
 
 
-pdf(paste0(sp_dir,species," geographic cross validation.pdf"),
+pdf(paste0(sp_dir,species," simple geographic cross validation.pdf"),
     width = 11,
     height = 8.5)
 print(str_contr)
@@ -350,7 +350,7 @@ overall.y = ggplot(data = dif_mod,aes(x = Contrast_full_name,y = mean))+
 
 
 
-pdf(paste0(sp_dir,species,"  overall simple cross validation.pdf"),
+pdf(paste0(sp_dir,species," simple overall simple cross validation.pdf"),
     width = 7,
     height = 5)
 print(overall.y)
@@ -382,7 +382,7 @@ count_type_contr = ggplot(data = dif_mod_count_type[which(dif_mod_count_type$Con
   annotate(geom = "text",x = 2,y = -0.017,label = "Favours Alternate",angle = 90)  
 
 
-pdf(paste0(sp_dir,species," annual cross validation.pdf"),
+pdf(paste0(sp_dir,species," simple count type cross validation.pdf"),
     width = 11,
     height = 8.5)
 print(count_type_contr)
@@ -408,7 +408,7 @@ if(species == demo_sp[1]){
 
 }
 save(list = c("dif_mod_year_out","dif_mod_strat_out","dif_mod_out","dif_mod_count_type_out","models","contrast_full_names","demo_sp"),
-     file = "comparison_summary_output.RData")
+     file = "simple_comparison_summary_output.RData")
 
 
 

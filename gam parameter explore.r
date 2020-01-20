@@ -13,7 +13,7 @@ heavy_tailed = TRUE #all models use the t-distribution to model extra-Poisson va
 species_to_run = c("Cooper's Hawk","Wood Thrush", "American Kestrel","Barn Swallow","Chestnut-collared Longspur","Ruby-throated Hummingbird")
 
 
-model = models[2]
+model = models[1]
 
 
 
@@ -100,7 +100,7 @@ betaplot = ggplot(data = conti,aes(x = year,y = med))+
   coord_cartesian(ylim = c(0,max(conti$med)*2))+
   geom_line(colour = grey(0.2),size = 1.4)
 
-pdf(file = paste0(sp_dir,species," GAM components.pdf"),
+pdf(file = paste0(sp_dir,species," ",model," components.pdf"),
     width = 7,
     height = 5)
  print(betaplot)
@@ -156,7 +156,7 @@ betaplot = ggplot(data = contiall,aes(x = year,y = med))+
   geom_line(size = 1.4,alpha = 0.05)+
   facet_grid_sc(rows = vars(species),scales = list(y = allysc))#,switch = "y")
  
-pdf(file = "All species gam-based change.pdf",
+pdf(file = paste0("All species ",model,"-based change.pdf"),
     height = 9,
     width = 4)
 print(betaplot)
@@ -260,8 +260,14 @@ if(model == models[1]){
 
   }#models
 
+write.csv(tcosplot,paste0(sp_dir,"Rolling Trends.csv"),row.names = F)
 
-
+tcosplot$species = species
+if(species == species_to_run[1]){
+  roll_trends = tcosplot
+}else{
+  roll_trends = rbind(roll_trends,tcosplot)
+}
 
 thresh30 = (0.7^(1/short_time)-1)*100
 thresh50 = (0.5^(1/short_time)-1)*100
@@ -326,6 +332,74 @@ dev.off()
 
 
   }#species
+
+
+
+roll_trends_sort <- arrange(roll_trends,species,model,Region_alt,End_year)
+
+write.csv(roll_trends_sort,"Rolling trends for all species and models.csv",row.names = F)
+
+
+my_acf <- function(x,lg = 1){
+  ac = acf(x,lag.max = lg)
+  ac = ac$acf[,,1][lg+1]
+  return(ac)
+}
+
+
+my_diff <- function(x,lg = 1){
+  ac = diff(x,lag = lg)
+  mac = mean(abs(ac))
+  return(mac)
+}
+
+
+my_diff <- function(x){
+  ac = diff(x)
+  mac = mean(abs(ac))
+  return(mac)
+}
+
+my_diff2 <- function(x){
+  ac = diff(x,lag = 2)
+  mac = mean(abs(ac))
+  return(mac)
+}
+
+
+library(forecast)
+ 
+acf_by_sp <- roll_trends_sort %>% group_by(species,model,Region_alt) %>% 
+  summarise(.,acf = my_acf(Trend),acf10 = my_acf(Trend,10))
+
+dif_by_sp <- roll_trends_sort %>% group_by(species,model,Region_alt) %>% 
+  summarise(.,dif = my_diff(Trend), dif10 = my_diff(Trend,10))
+
+
+  acfp = ggplot(data = acf_by_sp[which(acf_by_sp$Region_alt == "Continental"),],
+                aes(x = model,y = acf,group = species,colour = species))+
+    geom_point()+
+    geom_line()
+  
+  acfp10 = ggplot(data = acf_by_sp[which(acf_by_sp$Region_alt == "Continental"),],
+                aes(x = model,y = acf10,group = species,colour = species))+
+    geom_point()+
+    geom_line()
+
+  dffp = ggplot(data = dif_by_sp[which(dif_by_sp$Region_alt == "Continental"),],
+                aes(x = model,y = dif,group = species,colour = species))+
+    geom_point()+
+    geom_line()
+
+  
+  dffp10 = ggplot(data = dif_by_sp[which(dif_by_sp$Region_alt == "Continental"),],
+                aes(x = model,y = dif10,group = species,colour = species))+
+    geom_point()+
+    geom_line()
+  
+
+
+
 
 
 

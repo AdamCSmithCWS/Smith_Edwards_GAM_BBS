@@ -394,6 +394,27 @@ print(qq)
 dev.off()
 
 
+qq = ggplot(data = loo.point,aes(sample = gamye_firstdiff))+
+  geom_qq(distribution = stats::qt,
+          dparams = list(df = 1.5))+
+  geom_qq_line(distribution = stats::qt,
+               dparams = list(df = 1.5))
+
+pdf(file = paste0(sp_dir,"qq plot t-df-1.5 gamye_firstdiff.pdf"))
+print(qq)
+dev.off()
+
+qq = ggplot(data = loo.point,aes(sample = gamye_slope))+
+  geom_qq(distribution = stats::qt,
+          dparams = list(df = 1.5))+
+  geom_qq_line(distribution = stats::qt,
+               dparams = list(df = 1.5))
+
+pdf(file = paste0(sp_dir,"qq plot t-df-1.5 gamye_slope.pdf"))
+print(qq)
+dev.off()
+
+
 }#species
 
 
@@ -496,7 +517,7 @@ m.year = jagsUI::jags(data = jg.dat,
                        parameters.to.save = c("nu","difmod","difmod_group","tau"),
                        n.chains = 3,
                        n.burnin = 2000,
-                       n.iter = 10000,
+                       n.iter = 12000,
                        n.thin = 10,
                        parallel = F)
  # 

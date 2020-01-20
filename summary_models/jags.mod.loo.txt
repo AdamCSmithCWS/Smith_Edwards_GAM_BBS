@@ -6,7 +6,7 @@ model
   }
 
 
-     difmod ~ dnorm(0,0.001)
+     difmod ~ dnorm(0,1)
     for(y in 1:ngroups){
     difmod_gx[y] ~ dnorm(0,taugroup)
     difmod_group[y] <- difmod + difmod_gx[y]
