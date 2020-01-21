@@ -30,6 +30,8 @@ names(all_inds) = models
 
 source("colourblind safe qualitative pallete.r")
 model_pallete <- safe.pallet[[4]] 
+model_pallete <- model_palletec(2,1,3,4)
+
 names(model_pallete) <- models
 
 ### ggplot2::scale_colour_manual(values = map_palette, aesthetics = c("colour","fill"))+

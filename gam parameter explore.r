@@ -179,6 +179,7 @@ dev.off()
 
 source("colourblind safe qualitative pallete.r")
 model_pallete <- safe.pallet[[length(models)]] 
+model_pallete <- model_palletec(2,1,3,4)
 names(model_pallete) <- models
 
 
@@ -340,6 +341,16 @@ roll_trends_sort <- arrange(roll_trends,species,model,Region_alt,End_year)
 write.csv(roll_trends_sort,"Rolling trends for all species and models.csv",row.names = F)
 
 
+
+
+
+# plotting rolling trend results ------------------------------------------
+
+
+roll_trends_sort = read.csv("Rolling trends for all species and models.csv",stringsAsFactors = F)
+
+
+
 my_acf <- function(x,lg = 1){
   ac = acf(x,lag.max = lg)
   ac = ac$acf[,,1][lg+1]
@@ -353,22 +364,21 @@ my_diff <- function(x,lg = 1){
   return(mac)
 }
 
+# 
+# my_diff <- function(x){
+#   ac = diff(x)
+#   mac = mean(abs(ac))
+#   return(mac)
+# }
+# 
+# my_diff2 <- function(x){
+#   ac = diff(x,lag = 2)
+#   mac = mean(abs(ac))
+#   return(mac)
+# }
 
-my_diff <- function(x){
-  ac = diff(x)
-  mac = mean(abs(ac))
-  return(mac)
-}
-
-my_diff2 <- function(x){
-  ac = diff(x,lag = 2)
-  mac = mean(abs(ac))
-  return(mac)
-}
 
 
-library(forecast)
- 
 acf_by_sp <- roll_trends_sort %>% group_by(species,model,Region_alt) %>% 
   summarise(.,acf = my_acf(Trend),acf10 = my_acf(Trend,10))
 
@@ -380,22 +390,31 @@ dif_by_sp <- roll_trends_sort %>% group_by(species,model,Region_alt) %>%
                 aes(x = model,y = acf,group = species,colour = species))+
     geom_point()+
     geom_line()
+  x11()
+  print(acfp)
+  
   
   acfp10 = ggplot(data = acf_by_sp[which(acf_by_sp$Region_alt == "Continental"),],
                 aes(x = model,y = acf10,group = species,colour = species))+
     geom_point()+
     geom_line()
+  x11()
+  print(acfp10)
 
   dffp = ggplot(data = dif_by_sp[which(dif_by_sp$Region_alt == "Continental"),],
                 aes(x = model,y = dif,group = species,colour = species))+
     geom_point()+
     geom_line()
+  x11()
+  print(dffp)
 
   
   dffp10 = ggplot(data = dif_by_sp[which(dif_by_sp$Region_alt == "Continental"),],
                 aes(x = model,y = dif10,group = species,colour = species))+
     geom_point()+
     geom_line()
+  x11()
+  print(dffp10)
   
 
 
