@@ -6,7 +6,7 @@ model
   }
 
 
-     difmod ~ dnorm(0,1)
+     difmod ~ dnorm(0,10) # only very weakly informative because of the scale of the differences (<< 1)
     for(y in 1:ngroups){
     difmod_gx[y] ~ dnorm(0,taugroup)
     difmod_group[y] <- difmod + difmod_gx[y]
@@ -14,8 +14,8 @@ model
   
 
 	nu ~ dgamma(2, 0.1) #
-  tau ~ dgamma(0.001,0.001)
-  taugroup ~ dgamma(0.001,0.001)
+  tau ~ dscaled.gamma(1,100) #only very weakly informative prior because of the scale of the differences (<< 1)
+  taugroup ~ dscaled.gamma(1,100) #implicit prior on sigma of a half-t dist: sigma = 1*t(df = 100)
 
 
 

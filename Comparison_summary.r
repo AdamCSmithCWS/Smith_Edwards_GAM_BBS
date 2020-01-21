@@ -37,7 +37,7 @@ demo_sp <- c("American Kestrel",
              "Cooper's Hawk",
              "Ruby-throated Hummingbird")
 
-for(species in demo_sp){
+for(species in demo_sp[c(4,5)]){
   
 
   
