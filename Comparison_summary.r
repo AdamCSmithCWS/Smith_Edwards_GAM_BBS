@@ -37,7 +37,8 @@ demo_sp <- c("American Kestrel",
              "Cooper's Hawk",
              "Ruby-throated Hummingbird")
 
-for(species in demo_sp[c(4,5)]){
+jj = 1
+for(species in demo_sp){
   
 
   
@@ -80,10 +81,73 @@ dif_mod_year1$species = species
 dif_mod_year1$Contrast_full_name = contrast_full_names[dif_mod_year1$Contrast_name]
 
 if(comp == "gamye_firstdiff"){
+  
+  # for(gp in 1:jags_data$ngroups){
+  # df = data.frame(dif = jags_data$dif[which(jags_data$group == gp)])
+  # dfm = m.year$mean$nu+0.5
+  # ncp = m.year$mean$difmod_group[gp]
+  # qq = ggplot(data = df,aes(sample = dif))+
+  #   geom_qq(distribution = stats::qt,
+  #           dparams = list(df = dfm,ncp = ncp))+
+  #   geom_qq_line(distribution = stats::qt,
+  #                dparams = list(df = dfm,ncp = ncp),
+  #                line.p = c(0.25,0.75))
+  # png(file = paste0(sp_dir,gp," qq plot t-df-modeled gamye_firstdiff.png"))
+  # print(qq)
+  # dev.off()
+  # 
+  # }
+  # 
+  
+  qq = ggplot(data = df,aes(sample = dif))+
+      geom_qq(distribution = stats::qt,
+              dparams = list(df = m.year$mean$nu))+
+      geom_qq_line(distribution = stats::qt,
+                   dparams = list(df = m.year$mean$nu),
+                   line.p = c(0.25,0.75))
+  png(file = paste0(sp_dir,"qq plot t-df-modeled gamye_firstdiff.png"))
+  print(qq)
+  dev.off()
+  
+  qq = ggplot(data = loo.point,aes(sample = gamye_firstdiff))+
+    geom_qq()+
+    geom_qq_line()
+  
+  png(file = paste0(sp_dir,"qq plot gamye_firstdiff.png"))
+  print(qq)
+  dev.off()
+  
   dif_mod_year = dif_mod_year1
 }else{
+  
+  qq = ggplot(data = loo.point,aes(sample = gamye_slope))+
+    geom_qq(distribution = stats::qt,
+            dparams = list(df = 2))+
+    geom_qq_line(distribution = stats::qt,
+                 dparams = list(df = 2),
+                 line.p = c(0.001,0.999))
+  
+  png(file = paste0(sp_dir,"qq plot t-df-modeled gamye_slope.png"))
+  print(qq)
+  dev.off()
+  
+  qq = ggplot(data = loo.point,aes(sample = gamye_slope))+
+    geom_qq()+
+    geom_qq_line()
+  
+  png(file = paste0(sp_dir,"qq plot gamye_slope.png"))
+  print(qq)
+  dev.off()
+  
+  
   dif_mod_year = rbind(dif_mod_year,dif_mod_year1)
 }
+
+
+
+
+
+
 
 }
 
@@ -129,6 +193,8 @@ for(comp in c("gamye_firstdiff","gamye_slope")){
 
   jags_data = tosave2out[[comp]]$m.year$model$data()
   m.year = tosave2out[[comp]]$m.year
+  
+
   
   wparam = "difmod"
   dif_mod_year_over1 = data.frame(matrix(m.year$summary[wparam,],nrow = 1))
@@ -185,12 +251,6 @@ for(comp in c("gamye_firstdiff","gamye_slope")){
   
   jags_data = tosave2out[[comp]]$m.strat$model$data()
   m.strat = tosave2out[[comp]]$m.strat
-  
-  
-  # distribution of the BPIC values -----------------------------------------
-  
-  #  alldat = tosave$alldat
-  
   
   
   
@@ -253,9 +313,11 @@ print(str_contr)
 dev.off()
 
 
+# mapping distribution of the BPIC values -----------------------------------------
 
-## plot the overall differences in model fit by pairwise comparisons
 
+
+# overall using geographic stratification  -----------------------------------------
 
 for(comp in c("gamye_firstdiff","gamye_slope")){
   
@@ -325,7 +387,9 @@ dev.off()
 
 
 
-## overall comparison, no stratification
+
+# overall comparison, no stratification -----------------------------------
+
 
 
 ### load overal model
@@ -386,7 +450,7 @@ dev.off()
 
 
 
-if(species == demo_sp[1]){
+if(jj == 1){
   dif_mod_year_out = dif_mod_year
   dif_mod_strat_out = dif_mod_strat
   dif_mod_year_over_out = dif_mod_year_over
@@ -400,7 +464,7 @@ if(species == demo_sp[1]){
   dif_mod_out = rbind(dif_mod_out,dif_mod)
 }
 
-
+jj = jj+1
 
 }
 save(list = c("dif_mod_year_out","dif_mod_year_over_out","dif_mod_strat_out","dif_mod_strat_over_out","dif_mod_out","models","contrast_full_names","demo_sp"),

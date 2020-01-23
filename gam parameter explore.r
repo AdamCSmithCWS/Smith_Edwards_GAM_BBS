@@ -15,7 +15,9 @@ species_to_run = c("Cooper's Hawk","Wood Thrush", "American Kestrel","Barn Swall
 
 model = models[1]
 
-
+pooling = list()
+length(pooling) = length(species_to_run)
+names(pooling) <- species_to_run
 
 for(species in species_to_run){
   
@@ -34,7 +36,8 @@ for(species in species_to_run){
   B.X = sumr[paste0("B.X[",1:nknots,"]"),]
 
   beta.X = sumr[grep(row.names(sumr),pattern = "beta.X",fixed = T),]
-  
+
+ 
   BXmat = jags_mod_param$sims.list[["B.X"]]
   basis = raw.dat$X.basis
   nyears = nrow(basis)
@@ -106,8 +109,43 @@ pdf(file = paste0(sp_dir,species," ",model," components.pdf"),
  print(betaplot)
  dev.off()
  
+ 
+ 
+ 
+ 
  strati$species = species
  conti$species = species
+ 
+ 
+ 
+
+# pooling factor calculation ----------------------------------------------
+
+ sdbeta.mat = 1/sqrt(jags_mod_param$sims.list[["taubeta"]])
+ BXmat = jags_mod_param$sims.list[["B.X"]]
+ beta.x.mat = jags_mod_param$sims.list[["beta.X"]]
+ 
+ pool = NA
+ for (k in 1:raw.dat$nknots){
+   bdif = beta.x.mat[,,k]-BXmat[,k]
+   pm_var_strat_bdif = mean (apply (bdif, 1, var))
+   
+   var_pmean_bdifa = var(apply(bdif,2,mean))
+   
+   pool[k] <- min(var_pmean_bdifa/pm_var_strat_bdif  ,1)
+   
+ #   for(s in 1:raw.dat$nstrata){
+ #     pvar_mean_bdif = var(bdif[,s])
+ # 
+ # pool[s,k] <- min(pvar_mean_bdif/pm_var_strat_bdif  ,1)
+ # 
+ # 
+ #   }
+   
+   }
+ 
+ pooling[[species]] <- pool
+ 
  if(species == species_to_run[1]){
    stratiall = strati
    contiall = conti

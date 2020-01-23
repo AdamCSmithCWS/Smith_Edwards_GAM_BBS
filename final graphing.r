@@ -57,18 +57,18 @@ smod <- function(x){
   str_sub(x,start = str_locate(x,pattern = " vs ")[,2]+1,end = str_length(x))
 }
 
-dif_mod_out$M1 = paste("Favours",fmod(dif_mod_out$Contrast_full_name))
-dif_mod_out$M2 = paste("Favours",smod(dif_mod_out$Contrast_full_name))
+dif_mod_year_over_out$M1 = paste("Favours",fmod(dif_mod_out$Contrast_full_name))
+dif_mod_year_over_out$M2 = paste("Favours",smod(dif_mod_out$Contrast_full_name))
 
 
-dif_mod_labs = filter(dif_mod_out,species == demo_sp[1])
+dif_mod_labs = filter(dif_mod_year_over_out,species == demo_sp[1])
 dif_mod_labs$M1loc = 0.0025
 dif_mod_labs$M2loc = -0.0025
 
 
 # overall summary graphs --------------------------------------------------
 
-overall.comparison = ggplot(data = dif_mod_out,aes(x = Contrast_full_name,y = mean,group = species,colour = species))+
+overall.comparison = ggplot(data = dif_mod_year_over_out,aes(x = Contrast_full_name,y = mean,group = species,colour = species))+
   #coord_cartesian(ylim = c(-0.05,0.05))+
   theme_minimal()+
   # theme(legend.position = "none",
@@ -90,7 +90,7 @@ overall.comparison = ggplot(data = dif_mod_out,aes(x = Contrast_full_name,y = me
   coord_flip()
 
 
-pdf(paste0("overall simple cross validation.pdf"),
+pdf(paste0("overall annual-strat simple cross validation.pdf"),
     width = 10,
     height = 5)
 print(overall.comparison)

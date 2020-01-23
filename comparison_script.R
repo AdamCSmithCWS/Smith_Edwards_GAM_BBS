@@ -450,7 +450,9 @@ library(doParallel)
 n_cores <- length(species_to_run)
 cluster <- makeCluster(n_cores, type = "PSOCK")
 registerDoParallel(cluster)
-
+########################
+##############
+############## consider fixing nu at 3, sensu "robust regression" model in Gelman BDA pg 440.
 
 foreach(m = 1:length(species_to_run),
         .packages = 'jagsUI',
