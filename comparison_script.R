@@ -9,9 +9,9 @@ library(tidyverse)
 models = c("gamye","gam","firstdiff","slope")
 heavy_tailed = TRUE #all models use the t-distribution to model extra-Poisson variance
 
-species_to_run = c("Wood Thrush", "American Kestrel","Barn Swallow","Chestnut-collared Longspur","Cooper's Hawk","Ruby-throated Hummingbird")
+species_to_run = c("Horned Lark","Wood Thrush", "American Kestrel","Barn Swallow","Chestnut-collared Longspur","Cooper's Hawk","Ruby-throated Hummingbird")
 
-for(species in species_to_run){
+for(species in species_to_run[1]){
 
 sp_dir = paste0("output/",species,"/")
 #### calculate all annual indices (strata and continental)
@@ -30,7 +30,7 @@ names(all_inds) = models
 
 source("colourblind safe qualitative pallete.r")
 model_pallete <- safe.pallet[[4]] 
-model_pallete <- model_palletec(2,1,3,4)
+model_pallete <- model_pallete[c(2,1,3,4)]
 
 names(model_pallete) <- models
 
@@ -312,10 +312,10 @@ library(tidyverse)
 models = c("gamye","gam","firstdiff","slope")
 heavy_tailed = TRUE #all models use the t-distribution to model extra-Poisson variance
 
-species_to_run = c("Wood Thrush", "American Kestrel","Barn Swallow","Chestnut-collared Longspur","Cooper's Hawk","Ruby-throated Hummingbird")
+# species_to_run = c("Wood Thrush", "American Kestrel","Barn Swallow","Chestnut-collared Longspur","Cooper's Hawk","Ruby-throated Hummingbird")
 
 
-for(species in species_to_run){
+for(species in species_to_run[1]){
   
   sp_dir = paste0("output/",species,"/")
   
