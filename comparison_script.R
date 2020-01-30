@@ -482,6 +482,8 @@ nstrat = max(strat)
    ncounts = length(dif)
    
 
+ 
+   
 
 jg.dat = list(
   ncounts = ncounts,
@@ -559,6 +561,34 @@ m.year = jagsUI::jags(data = jg.dat,
  tosave2 = c(tosave2,
              list(m.overall = m.overall))
 
+ 
+ 
+ jg.dat = list(
+   ncounts = ncounts,
+   dif = dif,
+   group1 = year,
+   ngroups1 = nyears,
+   group2 = strat,
+   ngroups2 = nstrat,
+   
+ )
+ # 
+ # 
+ # ############ Bayesian model estimating the difference in fit among models by year and stratum while accounting for the uncertainty in the point-wise loo
+ # 
+ m.both = jagsUI::jags(data = jg.dat,
+                       model.file = "summary_models/jags.mod.loo.both.txt",
+                       parameters.to.save = c("nu","difmod","difmod_group","tau","taugroup1","taugroup2"),
+                       n.chains = 3,
+                       n.burnin = 2000,
+                       n.iter = 10000,
+                       n.thin = 10,
+                       parallel = F)
+ # 
+ # 
+ tosave2 = c(list(m.both = m.both))
+ 
+ 
  
  if(comp == "gamye_firstdiff"){
    tosave2out = list(gamye_firstdiff = tosave2,

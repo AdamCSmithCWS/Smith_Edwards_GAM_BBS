@@ -1,0 +1,34 @@
+model
+{
+  for(j in 1:ncounts){
+    dif_true[j] <- difmod_group[group1[j],group2[j]]
+    dif[j] ~ dt(dif_true[j],tau,nu)
+  }
+
+
+     difmod ~ dnorm(0,10) # only very weakly informative because of the scale of the differences (<< 1)
+    
+    for(y in 1:ngroups1){
+    difmod_g1[y] ~ dnorm(0,taugroup1)
+    }
+    
+    for(x in 1:ngroups2){
+    difmod_g2[x] ~ dnorm(0,taugroup2)
+    }
+    
+    for(y in 1:ngroups1){
+    for(x in 1:ngroups2){
+    difmod_group[y,x] <- difmod + difmod_g1[y] + difmod_g2[x]
+      }
+      }
+  
+
+	nu ~ dgamma(2, 0.1) #
+  tau ~ dscaled.gamma(1,100) #only very weakly informative prior because of the scale of the differences (<< 1)
+  taugroup1 ~ dscaled.gamma(1,100) #implicit prior on sigma of a half-t dist: sigma = 1*t(df = 100)
+  taugroup2 ~ dscaled.gamma(1,100) #implicit prior on sigma of a half-t dist: sigma = 1*t(df = 100)
+
+
+
+}#end model
+
