@@ -10,7 +10,7 @@ library(facetscales)
 models = c("gamye","gam","firstdiff","slope")
 heavy_tailed = TRUE #all models use the t-distribution to model extra-Poisson variance
 
-species_to_run = c("Cooper's Hawk","Wood Thrush", "American Kestrel","Barn Swallow","Chestnut-collared Longspur","Ruby-throated Hummingbird")
+species_to_run = c("Horned Lark","Cooper's Hawk","Wood Thrush", "American Kestrel","Barn Swallow","Chestnut-collared Longspur","Ruby-throated Hummingbird")
 
 
 model = models[1]
@@ -23,6 +23,7 @@ for(species in species_to_run){
   
   sp_dir = paste0("output/",species,"/")
 
+  load(paste0(sp_dir,model,"/jags_data.RData"))  
   
   load(paste0(sp_dir,model,"/parameter_model_run.RData"))  
   raw.dat = jags_mod_param$model$cluster1$data()
@@ -88,15 +89,18 @@ betaxmat = jags_mod_param$sims.list[["beta.X"]]
 }
 
 strati$strat = factor(strati$strat)
-# strati$prec = 1/((strati$uci-strati$lci)/(1.96*2))^2
-# scounts = table(raw.dat$strat)
-# for(s in 1:nstrata){
-#   strati[which(strati$strat == s),"alpha"] = (1/(sqrt(scounts[s])/sqrt(min(scounts))))*0.5 
-# }
+strati$prec = 1/((strati$uci-strati$lci)/(1.96*2))^2
+scounts = table(raw.dat$strat)
+for(s in 1:nstrata){
+  strati[which(strati$strat == s),"alpha"] = (1/(sqrt(scounts[s])/sqrt(min(scounts))))*0.5
+  strati[which(strati$strat == s),"ncounts"] = (scounts[s])
+  strati[which(strati$strat == s),"strat_name"] <- unique(jags_data$strat_name[which(jags_data$strat == s)])
+  
+}
 
 betaplot = ggplot(data = conti,aes(x = year,y = med))+
-  theme_minimal()+
-  labs(title = paste0(species," GAM components including hyperparameter"))+
+  theme_classic()+
+  labs(title = "")+#paste0(species," GAM components including hyperparameter"))+
   ylab("Population change based on GAM smooth (linear scale)")+
   theme(legend.position = "none")+
   geom_line(data = strati,aes(x = year, y = med,group = strat),alpha = 0.1)+
@@ -109,7 +113,21 @@ pdf(file = paste0(sp_dir,species," ",model," components.pdf"),
  print(betaplot)
  dev.off()
  
+ betaplot = ggplot(data = conti,aes(x = year,y = med))+
+   theme_minimal()+
+   labs(title = paste0(species," GAM components including hyperparameter"))+
+   ylab("Population change based on GAM smooth (linear scale)")+
+   theme(legend.position = "none")+
+   geom_line(data = strati,aes(x = year, y = med,group = strat),alpha = 0.1)+
+   #coord_cartesian(ylim = c(0,max(conti$med)*2))+
+   scale_y_log10()+
+   geom_line(colour = grey(0.2),size = 1.4)
  
+ pdf(file = paste0(sp_dir,species," ",model," logy components.pdf"),
+     width = 7,
+     height = 5)
+ print(betaplot)
+ dev.off()
  
  
  
@@ -125,24 +143,69 @@ pdf(file = paste0(sp_dir,species," ",model," components.pdf"),
  BXmat = jags_mod_param$sims.list[["B.X"]]
  beta.x.mat = jags_mod_param$sims.list[["beta.X"]]
  
- pool = NA
+ poola = NA
+ pool = matrix(NA,nrow = raw.dat$nstrata,ncol = raw.dat$nknots)
  for (k in 1:raw.dat$nknots){
    bdif = beta.x.mat[,,k]-BXmat[,k]
    pm_var_strat_bdif = mean (apply (bdif, 1, var))
    
    var_pmean_bdifa = var(apply(bdif,2,mean))
    
-   pool[k] <- min(var_pmean_bdifa/pm_var_strat_bdif  ,1)
+   #poola[k] <- min(var_pmean_bdifa/pm_var_strat_bdif  ,1)
    
- #   for(s in 1:raw.dat$nstrata){
- #     pvar_mean_bdif = var(bdif[,s])
- # 
- # pool[s,k] <- min(pvar_mean_bdif/pm_var_strat_bdif  ,1)
- # 
- # 
- #   }
-   
+   for(s in 1:raw.dat$nstrata){
+     pvar_mean_bdif = var(bdif[,s])
+
+ pool[s,k] <- min(pvar_mean_bdif/pm_var_strat_bdif  ,1)
+
+
    }
+   
+   
+ }
+ 
+ pool_by_strat = rowMeans(pool[,-c(4:10)]) #summarizing the pooling for the outer knots
+ 
+ 
+ for(s in 1:nstrata){
+   strati[which(strati$strat == s),"pool"] = (pool_by_strat[s])
+   
+ }
+ 
+ 
+ strati$pool_q = NA
+ strati[which(strati$pool < quantile(strati$pool,0.15)),"pool_q"] <- c("More counts")
+ strati[which(strati$pool > quantile(strati$pool,0.85)),"pool_q"] <- c("Fewer counts")
+
+ strati$data_q = NA
+ strati[which(strati$ncounts < quantile(strati$ncounts,0.15)),"data_q"] <- c("Fewer counts")
+ strati[which(strati$ncounts > quantile(strati$ncounts,0.85)),"data_q"] <- c("More counts")
+ 
+ # strati$qual = paste(strati$data_q,strati$pool_q,sep = "_")
+ conti2 = conti
+ conti2$data_q <- "Fewer counts"
+ conti3 = conti
+ conti3$data_q <- "More counts"
+ contiplot = rbind(conti2,conti3)
+ betaplot = ggplot(data = strati,aes(x = year,y = med, group = data_q))+
+   theme_minimal()+
+   labs(title = paste0(species," GAM components including hyperparameter"))+
+   ylab("Population change based on GAM smooth (linear scale)")+
+   theme(legend.position = "none")+
+   geom_line(data = strati,aes(x = year, y = med,group = strat),alpha = 0.1)+
+   #coord_cartesian(ylim = c(0.1,max(conti$med)*2))+
+   scale_y_log10()+
+   geom_line(data = contiplot,aes(x = year,y = med),colour = grey(0.2),size = 1.4)+
+   facet_col(facets = ~data_q,drop = T)
+ 
+ pdf(file = paste0(sp_dir,species," ",model,"split components.pdf"),
+     width = 5,
+     height = 8)
+ print(betaplot)
+ dev.off()
+ 
+ 
+ 
  
  pooling[[species]] <- pool
  

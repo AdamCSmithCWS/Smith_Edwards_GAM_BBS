@@ -10,10 +10,12 @@ model
     
     for(y in 1:ngroups1){
     difmod_g1[y] ~ dnorm(0,taugroup1)
+    difmod_g1_full[y] <- difmod + difmod_g1[y]
     }
     
     for(x in 1:ngroups2){
     difmod_g2[x] ~ dnorm(0,taugroup2)
+    difmod_g2_full[x] <- difmod + difmod_g2[x]
     }
     
     for(y in 1:ngroups1){

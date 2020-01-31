@@ -29,11 +29,12 @@ names(contrast_full_names) = contr_names
 heavy_tailed = TRUE #all models use the t-distribution to model extra-Poisson variance
 
 
-demo_sp <- c("American Kestrel",
+demo_sp <- c("Horned Lark",
+             "American Kestrel",
              "Barn Swallow",
              "Wood Thrush",
              "Chestnut-collared Longspur",
-             "Cooper's Hawk",
+             #"Cooper's Hawk",
              "Ruby-throated Hummingbird")
 
 

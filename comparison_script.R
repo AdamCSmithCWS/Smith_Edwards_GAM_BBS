@@ -11,7 +11,7 @@ heavy_tailed = TRUE #all models use the t-distribution to model extra-Poisson va
 
 species_to_run = c("Horned Lark","Wood Thrush", "American Kestrel","Barn Swallow","Chestnut-collared Longspur","Cooper's Hawk","Ruby-throated Hummingbird")
 
-for(species in species_to_run[1]){
+for(species in species_to_run[-4]){
 
 sp_dir = paste0("output/",species,"/")
 #### calculate all annual indices (strata and continental)
@@ -257,7 +257,7 @@ for(pp in unique(indstrata$Region)){
     geom_text_repel(data = labl_obs,aes(x = Year,y = obs_mean,label = label),colour = grey(0.5),inherit.aes = F, nudge_y = -0.1*uylim)+
     #annotate(geom = "text",x = labl_obs$Year,y = labl_obs$obs_mean,label = "Observed mean counts")+
     scale_colour_manual(values = model_pallete, aesthetics = c("colour","fill"))+
-    geom_dotplot(data = datt1,mapping = aes(x = Year),binaxis = "x", stackdir = "up",method = "histodot",binwidth = 1,width = 0.2,inherit.aes = F,fill = "darkorange",alpha = 0.2,dotsize = 0.4)+
+    geom_dotplot(data = datt1,mapping = aes(x = Year),drop = T,binaxis = "x", stackdir = "up",method = "histodot",binwidth = 1,width = 0.2,inherit.aes = F,fill = "darkorange",alpha = 0.2,dotsize = 0.4)+
     annotate(geom = "text",x = 1990,y = -0.02*uylim,label = paste("total of",max(indstrat1$nrts_total),"routes"),colour = "darkorange",alpha = 0.4)
  
    print(strat_over)
@@ -483,84 +483,6 @@ nstrat = max(strat)
    
 
  
-   
-
-jg.dat = list(
-  ncounts = ncounts,
-dif = dif,
-group = year,
-ngroups = nyears
-)
-# 
-# 
-# ############ Bayesian model estimating the difference in fit among models and years while accounting for the uncertainty in the point-wise loo
-# 
-m.year = jagsUI::jags(data = jg.dat,
-                      model.file = "summary_models/jags.mod.loo.txt",
-                      parameters.to.save = c("nu","difmod","difmod_group","tau"),
-                      n.chains = 3,
-                      n.burnin = 2000,
-                      n.iter = 10000,
-                      n.thin = 10,
-                      parallel = F)
-# 
-# 
- tosave2 = c(list(m.year = m.year))
-# 
-# ############ Same as above but by strataum: Bayesian model estimating the difference in fit among models while accounting for the uncertainty in the point-wise loo
- jg.dat = list(
-   ncounts = ncounts,
-   dif = dif,
-   group = strat,
-   ngroups = nstrat
- )
- # 
- # 
- # ############ Bayesian model estimating the difference in fit among models and years while accounting for the uncertainty in the point-wise loo
- # 
- m.strat = jagsUI::jags(data = jg.dat,
-                       model.file = "summary_models/jags.mod.loo.txt",
-                       parameters.to.save = c("nu","difmod","difmod_group","tau"),
-                       n.chains = 3,
-                       n.burnin = 2000,
-                       n.iter = 12000,
-                       n.thin = 10,
-                       parallel = F)
- # 
-  tosave2 = c(tosave2,
-            list(m.strat = m.strat))
-# 
-# 
-# 
-# # 
-# 
-# 
-# ############ Same as above but overall: Bayesian model estimating the difference in fit among models
- 
-  jg.dat = list(
-    ncounts = ncounts,
-    dif = dif
-  )
-  # 
-  # 
-  # ############ Bayesian model estimating the difference in fit among models and years while accounting for the uncertainty in the point-wise loo
-  # 
-  m.overall = jagsUI::jags(data = jg.dat,
-                         model.file = "summary_models/jags.mod.loo.overall.txt",
-                         parameters.to.save = c("nu","difmod","tau"),
-                         n.chains = 3,
-                         n.burnin = 2000,
-                         n.iter = 10000,
-                         n.thin = 10,
-                         parallel = T)
-  
-  
-# 
-# ############ Bayesian model estimating the difference in fit among models
-# 
- tosave2 = c(tosave2,
-             list(m.overall = m.overall))
-
  
  
  jg.dat = list(
@@ -569,22 +491,26 @@ m.year = jagsUI::jags(data = jg.dat,
    group1 = year,
    ngroups1 = nyears,
    group2 = strat,
-   ngroups2 = nstrat,
+   ngroups2 = nstrat
    
  )
  # 
  # 
  # ############ Bayesian model estimating the difference in fit among models by year and stratum while accounting for the uncertainty in the point-wise loo
  # 
+# t1 = Sys.time()
  m.both = jagsUI::jags(data = jg.dat,
                        model.file = "summary_models/jags.mod.loo.both.txt",
-                       parameters.to.save = c("nu","difmod","difmod_group","tau","taugroup1","taugroup2"),
+                       parameters.to.save = c("nu","difmod","difmod_g1_full","difmod_g2_full","tau","taugroup1","taugroup2"),
                        n.chains = 3,
                        n.burnin = 2000,
                        n.iter = 10000,
                        n.thin = 10,
                        parallel = F)
  # 
+ #
+ # t2 = Sys.time()
+ # t2-t1
  # 
  tosave2 = c(list(m.both = m.both))
  
