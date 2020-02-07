@@ -473,10 +473,12 @@ nyears = max(year)
 
 strat = loo.point$Stratum_Factored
 nstrat = max(strat)
-
+tosave2out <- list()
+length(tosave2out) <- length(contrast_full_names)
+names(tosave2out) <- names(contrast_full_names)
 #fit2 = loo.point$firstdiff
  
- for(comp in c("gamye_firstdiff","gamye_slope")){
+ for(comp in names(contrast_full_names)){
 
    dif = as.numeric(unlist(loo.point[,comp]))
    ncounts = length(dif)
@@ -516,12 +518,8 @@ nstrat = max(strat)
  
  
  
- if(comp == "gamye_firstdiff"){
-   tosave2out = list(gamye_firstdiff = tosave2,
-                   gamye_slope = list())
- }else{
-                     tosave2out[["gamye_slope"]] = tosave2
-                     }
+
+                     tosave2out[[comp]] = tosave2
 
  }
 
