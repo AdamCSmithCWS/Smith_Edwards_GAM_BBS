@@ -34,7 +34,7 @@ demo_sp <- c("Horned Lark",
              "Barn Swallow",
              "Wood Thrush",
              "Chestnut-collared Longspur",
-             #"Cooper's Hawk",
+             "Cooper's Hawk",
              "Ruby-throated Hummingbird")
 
 
@@ -58,8 +58,8 @@ smod <- function(x){
   str_sub(x,start = str_locate(x,pattern = " vs ")[,2]+1,end = str_length(x))
 }
 
-dif_mod_year_over_out$M1 = paste("Favours",fmod(dif_mod_out$Contrast_full_name))
-dif_mod_year_over_out$M2 = paste("Favours",smod(dif_mod_out$Contrast_full_name))
+dif_mod_year_over_out$M1 = paste("Favours",fmod(dif_mod_year_over_out$Contrast_full_name))
+dif_mod_year_over_out$M2 = paste("Favours",smod(dif_mod_year_over_out$Contrast_full_name))
 
 
 dif_mod_labs = filter(dif_mod_year_over_out,species == demo_sp[1])
@@ -91,7 +91,7 @@ overall.comparison = ggplot(data = dif_mod_year_over_out,aes(x = Contrast_full_n
   coord_flip()
 
 
-pdf(paste0("overall annual-strat simple cross validation.pdf"),
+pdf(paste0("overall full cross validation.pdf"),
     width = 10,
     height = 5)
 print(overall.comparison)
@@ -140,7 +140,7 @@ yearly.comparison = ggplot(data = dif_y_p,aes(x = Year,y = mean,group = species,
 
 
 
-pdf(paste0("annual cross validation.pdf"),
+pdf(paste0("annual full cross validation.pdf"),
     width = 10,
     height = 8)
 print(yearly.comparison)
@@ -156,7 +156,7 @@ dif_mod_strat_out$M1 = paste("Favours",fmod(dif_mod_strat_out$Contrast_full_name
 dif_mod_strat_out$M2 = paste("Favours",smod(dif_mod_strat_out$Contrast_full_name))
 
 # selecting only two of the possible model comparisons
-dif_s_p = filter(dif_mod_strat_out,Contrast_name %in% c("gamye_firstdiff"))
+dif_s_p = filter(dif_mod_strat_out,Contrast_name %in% c("gam_slope"))
 
 
 mxcounts = max(dif_s_p$ncounts)
@@ -178,7 +178,7 @@ n.comparison = ggplot(data = dif_s_p,aes(x = ncounts,y = mean,group = species,co
   xlab("")+
   geom_hline(yintercept = 0,colour = grey(0.2),alpha = 0.2)+
   geom_point()+
-  #geom_smooth(method = "loess",formula = y ~ x,se = F)+
+  geom_smooth(method = "lm",formula = y ~ x,se = T)+
   # geom_linerange(aes(x = Year,ymin = lqrt,ymax = uqrt),
   #                alpha = 0.3,position = position_dodge(width = 0.4))+
   geom_text(inherit.aes = F,data = dif_mod_labs,aes(x = ncounts,y = M1loc,label = M1),show.legend = F,colour = grey(0.3),nudge_x = 0.5,angle = 0)+
@@ -189,11 +189,11 @@ n.comparison = ggplot(data = dif_s_p,aes(x = ncounts,y = mean,group = species,co
   #scale_x_discrete(position = "top")+
   guides(colour = guide_legend(reverse = F))+
   #coord_flip()+
-  facet_wrap(facets = ~species,ncol = 2,nrow = 3,scales = "free_y",shrink = T)
+  facet_wrap(facets = ~species,ncol = 2,nrow = 4,scales = "free_y",shrink = T)
 
 
 
-pdf(paste0("sample size by strata cross validation.pdf"),
+pdf(paste0("sample size by strata full cross validation.pdf"),
     width = 7,
     height = 8)
 print(n.comparison)
@@ -212,7 +212,7 @@ dev.off()
 mp = read_sf(dsn = "map/BBS_USGS_strata.shp")
 
 
-for(comp in c("gamye_firstdiff","gamye_slope")){
+for(comp in names(contrast_full_names)){
   pdf(file = paste0(comp,"map of fit comparison.pdf"))
   for(spp in demo_sp){
   dif_s_p = filter(dif_mod_strat_out,Contrast_name == comp & species == spp)

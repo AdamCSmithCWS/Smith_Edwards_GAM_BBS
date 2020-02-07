@@ -42,6 +42,9 @@ ncby_y = round(ncby_y/50)
 
 dattc = data.frame(Year = rep(as.integer(names(ncby_y)),times = ncby_y))
 
+
+# Figure 1 ----------------------------------------------------------------
+
   
 indcont = inds[which(inds$Region == "Continental"),]  
 
@@ -84,8 +87,17 @@ pdf(file = paste0(sp_dir,"Fig 1.pdf"),
 print(cont_over)
  dev.off()
  
+
+
+# Figure 2 GAMYE random smooths ---------------------------------------------
+# See different script, gam parameter explore.
+ 
+ 
+# Figure 3 ----------------------------------------------------------------
+
+ 
   
- pdf(file = paste0(sp_dir,"all Fig 1.pdf"),
+ pdf(file = paste0(sp_dir,"all Fig 3.pdf"),
      width = 5,
      height = 4)
  
@@ -142,7 +154,7 @@ for(pp in unique(inds$Region)){
  
  
 
-# GAMYE components plot ---------------------------------------------------
+# GAMYE components plot Figure 5 ---------------------------------------------------
 
 load(paste0(sp_dir,"gamye/parameter_model_run.RData"))
  load(paste0(sp_dir,"gamye/jags_mod_full.RData"))
@@ -175,7 +187,7 @@ source("colourblind safe qualitative pallete.r")
 
 
 
-pdf(file = paste0(sp_dir,"all Fig 4.pdf"),
+pdf(file = paste0(sp_dir,"all Fig 5.pdf"),
     width = 5,
     height = 4)
 
@@ -230,7 +242,7 @@ dev.off()
 
 
 
-# Rolling trends ----------------------------------------------------------
+# Rolling trends Figure 6----------------------------------------------------------
 
 
 
@@ -289,7 +301,7 @@ for(ly2 in c((fy+short_time):YYYY)){
                                   slope = F,
                                   prob_decrease = c(0,25,30,50),
                                   prob_increase = c(0,33,100))
-  trst_gamye$decomp <- "Including Year Effects"
+  trst_gamye$decomp <- "GAMYE - with Year-effects"
   
   trst_gamnoye = generate_regional_trends(indices = inds_gamnoye,
                                         Min_year = ly2-short_time,
@@ -298,7 +310,7 @@ for(ly2 in c((fy+short_time):YYYY)){
                                         slope = F,
                                         prob_decrease = c(0,25,30,50),
                                         prob_increase = c(0,33,100))
-  trst_gamnoye$decomp <- "Excluding Year Effects"
+  trst_gamnoye$decomp <- "GAMYE - Smooth only"
   
   
   trst_sl = generate_regional_trends(indices = inds_slope,
@@ -390,7 +402,7 @@ dev.off()
 
 
 
-pdf(paste0(paste0(sp_dir,"Figure 5.pdf")),
+pdf(paste0(paste0(sp_dir,"Figure 6.pdf")),
     width = 8.5,
     height = 6)
 rg = "Canada"
@@ -401,7 +413,7 @@ rg = "Canada"
   
   tmpend = tmp[which(tmp$End_year == 2011),]
   tmpend$lably = tmpend$roltlci
-  tmpend[which(tmpend$decomp == "Excluding Year Effects"),"lably"] <- tmpend[which(tmpend$decomp == "Excluding Year Effects"),"roltuci"]
+  tmpend[which(tmpend$decomp == "GAMYE - Smooth only"),"lably"] <- tmpend[which(tmpend$decomp == "GAMYE - Smooth only"),"roltuci"]
   
 
   
