@@ -257,7 +257,7 @@ betaplot = ggplot(data = contiall,aes(x = year,y = med))+
   geom_line(size = 1.4,alpha = 0.05)+
   facet_grid_sc(rows = vars(species),scales = list(y = allysc))#,switch = "y")
  
-pdf(file = paste0("All species ",model,"-based change.pdf"),
+pdf(file = paste0("All species ",model,"-based change Figure 2.pdf"),
     height = 9,
     width = 4)
 print(betaplot)
@@ -290,7 +290,9 @@ c_blue = brewer.pal(9,"Set1")[2]
 c_purp = brewer.pal(9,"Set1")[4]
 c_green = brewer.pal(9,"Set1")[3]
 
-
+######################## Figure 5
+#add a script to plot the continental full and smooth-only trajectories for BARS, with all the regular additional info
+########################
 for(species in species_to_run){
   
   

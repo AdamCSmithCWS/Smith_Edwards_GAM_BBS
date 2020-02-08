@@ -94,8 +94,9 @@ print(cont_over)
  
  
 # Figure 3 ----------------------------------------------------------------
-
- 
+#######################################
+# add a version that plots BCR 23 trajectories for BARS
+####################################### 
   
  pdf(file = paste0(sp_dir,"all Fig 3.pdf"),
      width = 5,
