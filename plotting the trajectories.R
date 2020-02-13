@@ -105,7 +105,11 @@ print(cont_over)
 
 for(pp in unique(inds$Region)){
   
-  if(pp == "Continental"){dattt = dattc}else{dattt = datt[which(datt$Stratum == pp),] }
+  if(pp == "Continental"){
+    dattt = dattc
+  }else{
+    dattt = datt[which(datt$Stratum == pp),] 
+    }
   indcont = inds[which(inds$Region == pp),]  
   
   indcont2 = indcont[which(indcont$model == "slope"),]
@@ -179,7 +183,7 @@ inds_gamnoye <- generate_regional_indices(jags_mod = jags_mod_param,
 indge$decomp = "Including Year Effects"
 
 indgnoe = inds_gamnoye$data_summary
-indgnoe$decomp = "Excluding Year Effects"
+indgnoe$decomp = "Smooth Only"
 
 indsall = rbind(indge,indgnoe)
 

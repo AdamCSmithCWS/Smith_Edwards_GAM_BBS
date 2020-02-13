@@ -49,7 +49,11 @@ species_to_run <- c("Barn Swallow",
                     "Chestnut-collared Longspur",
                     "Cooper's Hawk",
                     "Wild Turkey",
-                    "Horned Lark")
+                    "Horned Lark",
+                    "Canada Warbler",
+                    "Evening Grosbeak",
+                    "Carolina Wren",
+                    "Pine Siskin")
 
 models <- c("firstdiff", "gam", "gamye","slope")
 
@@ -58,7 +62,7 @@ models <- c("firstdiff", "gam", "gamye","slope")
 # Analysis by Species X Model Combination
 ###################################################
 
-for (species in species_to_run[c(5,4)])
+for (species in species_to_run[c(12,13,7)])
 {
   sp.dir = paste0("output/", species)
   dir.create(sp.dir)
@@ -68,7 +72,7 @@ for (species in species_to_run[c(5,4)])
     ## selecting stratified samples that remove 10% of data within each stratum
   jags_data <- prepare_jags_data(strat_data = stratified_data,
                                  species_to_run = species,
-                                 min_max_route_years = 10,
+                                 min_max_route_years = 3,
                                  model = "slope")
   
   sp.k = paste0(sp.dir, "/sp_k.RData")
@@ -107,7 +111,7 @@ foreach(m = 1:4,
     
     jags_data <- prepare_jags_data(strat_data = stratified_data,
                                    species_to_run = species,
-                                   min_max_route_years = 10,
+                                   min_max_route_years = 3,
                                    model = model)
     
     
@@ -186,7 +190,7 @@ stopCluster(cl = cluster)
 
 
 
-for(model in models[1:4]){
+for(model in models){
     
     ##################### CROSS VALIDATION ########################
   model_dir <- paste0(sp.dir,

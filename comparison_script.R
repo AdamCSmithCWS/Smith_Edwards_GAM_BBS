@@ -9,9 +9,14 @@ library(tidyverse)
 models = c("gamye","gam","firstdiff","slope")
 heavy_tailed = TRUE #all models use the t-distribution to model extra-Poisson variance
 
-species_to_run = c("Horned Lark","Wood Thrush", "American Kestrel","Barn Swallow","Chestnut-collared Longspur","Cooper's Hawk","Ruby-throated Hummingbird")
+species_to_run = c("Carolina Wren","Pine Siskin","Horned Lark","Wood Thrush", "American Kestrel","Barn Swallow","Chestnut-collared Longspur","Cooper's Hawk","Ruby-throated Hummingbird")
 
-for(species in species_to_run[-4]){
+
+
+external_drive = F #set to true if running from external drive
+
+
+for(species in species_to_run[1]){
 
 sp_dir = paste0("output/",species,"/")
 #### calculate all annual indices (strata and continental)
@@ -42,9 +47,12 @@ n.iter = 3000
 
 for(m in models){
   m_dir = paste0(sp_dir,m,"/")
-  m_dir_ext = paste0("D:/GAM Paper Script/",m_dir)
-  
-    load(paste0(m_dir,"jags_data.RData"))
+ if(external_drive){ 
+   m_dir_ext = paste0("D:/GAM Paper Script/",m_dir)
+  }else{
+    m_dir_ext = m_dir
+    }
+  load(paste0(m_dir,"jags_data.RData"))
 
     load(paste0(m_dir,"jags_mod_full.RData"))
 
@@ -378,43 +386,43 @@ loo.point[,"firstdiff_slope"] <- loo.point[,"firstdiff"] -loo.point[,"slope"]
 write.csv(loo.point,paste0(sp_dir,"wide form lppd.csv"))
 
 
-
-qq = ggplot(data = loo.point,aes(sample = gamye_firstdiff))+
-  geom_qq()+
-  geom_qq_line()
-
-pdf(file = paste0(sp_dir,"qq plot gamye_firstdiff.pdf"))
-print(qq)
-dev.off()
-
-qq = ggplot(data = loo.point,aes(sample = gamye_slope))+
-  geom_qq()+
-  geom_qq_line()
-
-pdf(file = paste0(sp_dir,"qq plot gamye_slope.pdf"))
-print(qq)
-dev.off()
-
-
-qq = ggplot(data = loo.point,aes(sample = gamye_firstdiff))+
-  geom_qq(distribution = stats::qt,
-          dparams = list(df = 1.5))+
-  geom_qq_line(distribution = stats::qt,
-               dparams = list(df = 1.5))
-
-pdf(file = paste0(sp_dir,"qq plot t-df-1.5 gamye_firstdiff.pdf"))
-print(qq)
-dev.off()
-
-qq = ggplot(data = loo.point,aes(sample = gamye_slope))+
-  geom_qq(distribution = stats::qt,
-          dparams = list(df = 1.5))+
-  geom_qq_line(distribution = stats::qt,
-               dparams = list(df = 1.5))
-
-pdf(file = paste0(sp_dir,"qq plot t-df-1.5 gamye_slope.pdf"))
-print(qq)
-dev.off()
+# 
+# qq = ggplot(data = loo.point,aes(sample = gamye_firstdiff))+
+#   geom_qq()+
+#   geom_qq_line()
+# 
+# pdf(file = paste0(sp_dir,"qq plot gamye_firstdiff.pdf"))
+# print(qq)
+# dev.off()
+# 
+# qq = ggplot(data = loo.point,aes(sample = gamye_slope))+
+#   geom_qq()+
+#   geom_qq_line()
+# 
+# pdf(file = paste0(sp_dir,"qq plot gamye_slope.pdf"))
+# print(qq)
+# dev.off()
+# 
+# 
+# qq = ggplot(data = loo.point,aes(sample = gamye_firstdiff))+
+#   geom_qq(distribution = stats::qt,
+#           dparams = list(df = 1.5))+
+#   geom_qq_line(distribution = stats::qt,
+#                dparams = list(df = 1.5))
+# 
+# pdf(file = paste0(sp_dir,"qq plot t-df-1.5 gamye_firstdiff.pdf"))
+# print(qq)
+# dev.off()
+# 
+# qq = ggplot(data = loo.point,aes(sample = gamye_slope))+
+#   geom_qq(distribution = stats::qt,
+#           dparams = list(df = 1.5))+
+#   geom_qq_line(distribution = stats::qt,
+#                dparams = list(df = 1.5))
+# 
+# pdf(file = paste0(sp_dir,"qq plot t-df-1.5 gamye_slope.pdf"))
+# print(qq)
+# dev.off()
 
 
 }#species
@@ -436,6 +444,16 @@ dev.off()
 library(foreach)
 library(doParallel)
 
+contr_names = c(paste(models[1],models[2],sep = "_"),
+                paste(models[1],models[3],sep = "_"),
+                paste(models[1],models[4],sep = "_"),
+                paste(models[2],models[3],sep = "_"),
+                paste(models[2],models[4],sep = "_"),
+                paste(models[3],models[4],sep = "_")
+)
+
+contrast_full_names = gsub(gsub(toupper(contr_names),pattern = "FIRSTDIFF",replacement = "DIFFERENCE",fixed = T),pattern = "_",replacement = " vs ",fixed = T)
+names(contrast_full_names) <- contr_names
 
 
 # models = c("gamye","gam","firstdiff","slope")
@@ -473,18 +491,35 @@ nyears = max(year)
 
 strat = loo.point$Stratum_Factored
 nstrat = max(strat)
-tosave2out <- list()
-length(tosave2out) <- length(contrast_full_names)
-names(tosave2out) <- names(contrast_full_names)
+
 #fit2 = loo.point$firstdiff
- 
- for(comp in names(contrast_full_names)){
+
+# load(paste0(sp_dir,"saved objects3.RData"))
+# tosav.orig = tosave2out
+# rm(tosave2out)
+
+# tosave2out = list(gamye_firstdiff = tosav.orig[["gamye_firstdiff"]],
+# gamye_slope = tosav.orig[["gamye_slope"]],
+# gamye_gam = tosav.orig[["gamye_gam"]],
+# gam_slope = tosav.orig[["gam_slope"]],
+# gam_firstdiff = NA,
+# firstdiff_slope = NA)
+
+tosave2out = list(gamye_firstdiff = NA,
+                  gamye_slope = NA,
+                  gamye_gam = NA,
+                  gam_slope = NA,
+                  gam_firstdiff = NA,
+                  firstdiff_slope = NA)
+
+
+ for(comp in contr_names){
+
+
 
    dif = as.numeric(unlist(loo.point[,comp]))
    ncounts = length(dif)
    
-
- 
  
  
  jg.dat = list(
@@ -514,20 +549,17 @@ names(tosave2out) <- names(contrast_full_names)
  # t2 = Sys.time()
  # t2-t1
  # 
- tosave2 = c(list(m.both = m.both))
- 
- 
- 
+     tosave2out[[comp]] <- c(list(m.both = m.both))
 
-                     tosave2out[[comp]] = tosave2
-
+ }
+     save(list = c("tosave2out"),file = paste0(sp_dir,"saved objects4.RData"))
+     
  }
 
 # 
 # 
- save(list = c("tosave2out"),file = paste0(sp_dir,"saved objects2.RData"))
 # 
-  }
+
 
 
 stopCluster(cl = cluster)

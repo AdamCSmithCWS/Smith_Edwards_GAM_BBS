@@ -302,8 +302,24 @@ for(species in species_to_run){
     
     load(paste0(sp_dir,model,"/jags_data.RData"))  
     if(model == models[1]){
+      load(paste0(sp_dir,model,"/jags_mod_full.RData")) 
+      indx2 = generate_regional_indices(jags_mod = jags_mod_full,
+                                        jags_data = jags_data,
+                                        #quantiles = qs,
+                                        regions = c("continental"),
+                                        max_backcast = NULL,
+                                        alternate_n = "n")
+      
+      
       load(paste0(sp_dir,model,"/parameter_model_run.RData"))  
       jags_mod_full = jags_mod_param
+      indx1 = generate_regional_indices(jags_mod = jags_mod_full,
+                                        jags_data = jags_data,
+                                        #quantiles = qs,
+                                        regions = c("continental"),
+                                        max_backcast = NULL,
+                                        alternate_n = "n3")
+      
     }else{
     load(paste0(sp_dir,model,"/jags_mod_full.RData"))  
     }
@@ -313,6 +329,59 @@ for(species in species_to_run){
     short_time = 10
     YYYY = max(jags_data$r_year)
     rollTrend = "Trend"
+    
+    
+
+    
+
+    
+    # plot the Smooth and full plot from GAMYE --------------------------------
+    
+    indcont = indx1$data_summary
+    indcont$version = "Smooth Only"
+    ttind = indx2$data_summary
+    ttind$version = "Including Year Effects"
+    indcont = rbind(indcont,ttind)
+    
+    indcont2 = indcont[which(indcont$version == "Including Year Effects"),]
+    
+    uylim = max(c(indcont$Index_q_0.975,indcont$obs_mean))
+    
+    labl_obs = unique(indcont[which(indcont$Year == 1970),c("Year","obs_mean")])
+    labl_obs$label = "Observed mean counts"
+    
+    mxy = tapply(indcont[which(indcont$Year %in% c(1970:2013)),"Index"],indcont[which(indcont$Year %in% c(1970:2013)),"version"],max)
+    
+    labl_mods = indcont[which(indcont$Index %in% mxy),]
+    
+    cont_over = ggplot(data = indcont,aes(x = Year,y = Index,group = version))+
+      theme_classic()+
+      theme(legend.position = "none")+
+      xlab(label = "")+
+      ylab(label = "Predicted mean count")+
+      geom_point(aes(x = Year,y = obs_mean),colour = grey(0.8),size = 0.8)+
+      coord_cartesian(ylim = c(0,uylim))+
+      scale_x_continuous(breaks = seq(1970,2020,by = 10),expand = c(0,0))+
+      scale_y_continuous(expand = c(0,0))+
+      geom_text_repel(data = labl_mods[4,],aes(x = Year,y = Index,label = Model),colour = grey(0.5), nudge_y = 0.075*uylim, nudge_x = 5)+
+      geom_text_repel(data = labl_obs,aes(x = Year,y = obs_mean,label = label),colour = grey(0.5),inherit.aes = F, nudge_y = -0.1*uylim, nudge_x = 5)+
+      geom_text_repel(data = labl_mods[1:2,],aes(x = Year,y = Index,label = Model,colour = model), nudge_y = 0.075*uylim, nudge_x = 5)+
+      scale_colour_manual(values = model_pallete, aesthetics = c("colour","fill"))+
+      geom_ribbon(data = indcont[which(indcont$model %in% models[c(4)]),],aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975),fill = grey(0.5),alpha = 0.2)+
+      geom_line(data = indcont[which(indcont$model %in% models[c(4)]),],aes(x = Year,y = Index),colour = grey(0.7),size = 1.2)+
+      
+      geom_ribbon(aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975,fill = model),alpha = 0.2)+
+      geom_line(aes(colour = model),size = 1.2)+
+      geom_dotplot(data = dattc,mapping = aes(x = Year),drop = T,binaxis = "x", stackdir = "up",method = "histodot",binwidth = 1,width = 0.2,inherit.aes = F,fill = grey(0.6),colour = grey(0.6),alpha = 0.2,dotsize = 0.3)
+    
+    pdf(file = paste0(sp_dir,"Fig 1.pdf"),
+        width = 5,
+        height = 4)
+    print(cont_over)
+    dev.off()
+    
+    
+    
     
 fy2 = min(1995,fy)
 
@@ -325,6 +394,7 @@ indscos = generate_regional_indices(jags_mod = jags_mod_full,
                                     startyear = fy2,
                                     max_backcast = NULL,
                                     alternate_n = "n3")
+
 
 }else{
   indscos = generate_regional_indices(jags_mod = jags_mod_full,
