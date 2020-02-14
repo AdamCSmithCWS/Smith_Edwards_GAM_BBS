@@ -48,7 +48,7 @@ for(species in demo_sp){
    
   load(paste0(sp_dir,"saved objects.RData"))
   
-  load(paste0(sp_dir,"saved objects3.RData"))
+  load(paste0(sp_dir,"saved objects4.RData"))
   loo.point = read.csv(paste0(sp_dir,"wide form lppd.csv"))
   
 
