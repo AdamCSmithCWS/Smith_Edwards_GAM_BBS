@@ -458,6 +458,187 @@ dev.off()
 
 
 
+
+
+
+# Figure 6 ----------------------------------------------------------------
+
+species = "Wood Thrush"
+model = "gamye"
+sp_dir = paste0("output/",species,"/")
+
+load(paste0(sp_dir,model,"/jags_data.RData"))  
+
+load(paste0(sp_dir,model,"/jags_mod_full.RData")) 
+
+load(paste0(sp_dir,model,"/parameter_model_run.RData"))  
+
+
+inds_gamye <- generate_regional_indices(jags_mod = jags_mod_full,
+                                        jags_data = jags_data,
+                                        regions = c("national"),
+                                        max_backcast = NULL,
+                                        alternate_n = "n") 
+
+inds_gamnoye <- generate_regional_indices(jags_mod = jags_mod_param,
+                                          jags_data = jags_data,
+                                          regions = c("national"),
+                                          max_backcast = NULL,
+                                          alternate_n = "n3") 
+
+
+load(paste0(sp_dir,"slope/jags_mod_full.RData"))
+
+inds_slope <- generate_regional_indices(jags_mod = jags_mod_full,
+                                        jags_data = jags_data,
+                                        regions = c("national"),
+                                        max_backcast = NULL,
+                                        alternate_n = "n") 
+
+
+
+
+fy = 1990
+short_time = 10
+YYYY = max(jags_data$r_year)
+rollTrend = "Trend"
+
+
+for(ly2 in c((fy+short_time):YYYY)){
+  trst_gamye = generate_regional_trends(indices = inds_gamye,
+                                        Min_year = ly2-short_time,
+                                        Max_year = ly2,
+                                        #quantiles = qs,
+                                        slope = F,
+                                        prob_decrease = c(0,25,30,50),
+                                        prob_increase = c(0,33,100))
+  trst_gamye$decomp <- "GAMYE - Including Year Effects"
+  
+  trst_gamnoye = generate_regional_trends(indices = inds_gamnoye,
+                                          Min_year = ly2-short_time,
+                                          Max_year = ly2,
+                                          #quantiles = qs,
+                                          slope = F,
+                                          prob_decrease = c(0,25,30,50),
+                                          prob_increase = c(0,33,100))
+  trst_gamnoye$decomp <- "GAMYE - Smooth only"
+  
+  
+  trst_sl = generate_regional_trends(indices = inds_slope,
+                                     Min_year = ly2-short_time,
+                                     Max_year = ly2,
+                                     #quantiles = qs,
+                                     slope = F,
+                                     prob_decrease = c(0,25,30,50),
+                                     prob_increase = c(0,33,100))
+  trst_sl$decomp <- "SLOPE"
+  
+  
+  
+  if(ly2 == fy+short_time){
+    tcos = rbind(trst_gamye,trst_gamnoye,trst_sl)
+    
+  }else{
+    tcos = rbind(tcos,trst_gamye,trst_gamnoye,trst_sl)
+  }
+  
+}
+
+tcos$rolt = tcos[,rollTrend]
+tcos$roltlci = tcos[,paste0(rollTrend,"_Q0.025")]
+tcos$roltlci2 = tcos[,paste0(rollTrend,"_Q0.25")]
+tcos$roltuci = tcos[,paste0(rollTrend,"_Q0.975")]
+tcos$roltuci2 = tcos[,paste0(rollTrend,"_Q0.75")]
+
+
+
+thresh30 = (0.7^(1/short_time)-1)*100
+thresh50 = (0.5^(1/short_time)-1)*100
+
+threshs = data.frame(thresh = c(thresh30,thresh50),
+                     p_thresh = c(paste("-30% over",short_time,"years"),
+                                  paste("-50% over",short_time,"years")),
+                     Year = rep(min(tcos$End_year),2))
+
+
+colye = c(model_pallete["gamye"],safe.pallet[[6]][5],model_pallete["slope"] )
+names(colye) <- unique(tcos$decomp)
+
+
+
+rg = "Canada"
+tmp = tcos[which(tcos$Region_alt == rg & tcos$End_year > 2000),]
+
+
+st_exc <- ""
+
+tmpend = tmp[which(tmp$End_year == 2011),]
+tmpend$lably = tmpend$rolt
+sm.v = which(tmpend$decomp == "GAMYE - Smooth only")
+
+tmpend[sm.v,"lably"] <- tmpend[sm.v,"roltuci"]
+sl.v = which(tmpend$decomp == "SLOPE")
+
+tmpend[sl.v,"End_year"] <- 2011.1
+sy.v <- which(tmpend$decomp == "GAMYE - Including Year Effects")
+tmpend[sy.v,"End_year"] <- 2010.85
+
+threshplot = data.frame(roltlci = c(rep(thresh30,2),rep(thresh50,2)),
+                        roltuci = c(rep(thresh50,2),rep(-15,2)),
+                        year = rep(c(1999,2019),2),
+                        cat = rep(c("Threatened","Endangered"),each = 2))
+lylim = min(tmp$roltlci)-0.75
+uylim = max(tmp$roltuci)+0.75
+
+
+cpt = ggplot(data = tmp,aes(x = End_year,y = rolt,group = decomp,colour = decomp))+
+  theme_classic()+
+  theme(legend.position = "none")+
+  xlab(paste0("Year of Status Assessment (End of ",short_time,"-year trend)"))+
+  ylab(paste0(short_time,"-year trends"))+
+  #geom_hline(yintercept = thresh30,colour = c_orng,size = 0.5)+
+  #geom_hline(yintercept = thresh50,colour = c_red,size = 0.5)+
+  coord_cartesian(ylim = c(lylim,uylim),xlim = c(2000,2018))+
+  geom_ribbon(data = threshplot[1:2,],aes(x = year,ymin = roltlci,ymax = roltuci),fill = c_orng ,alpha = 0.3,inherit.aes = F)+
+  geom_ribbon(data = threshplot[3:4,],aes(x = year,ymin = roltlci,ymax = roltuci),fill = c_red ,alpha = 0.3,inherit.aes = F)+
+  geom_hline(yintercept = 0,colour = grey(0.7))+
+  annotate(geom = "text",x = 2005, label = "Threatened",y = threshs[1,"thresh"]-0.5,colour = c_orng,size = 3,alpha = 0.6)+
+  annotate(geom = "text",x = 2005, label = "Endangered", y = threshs[2,"thresh"]-0.5,colour = c_red,size = 3,alpha = 0.6)+
+  geom_linerange(aes(x = End_year,ymin = roltlci,ymax = roltuci),alpha = 0.4,size = 0.4,position = position_dodge(width = 0.4))+
+  geom_point(aes(x = End_year,y = rolt),size = 0.8,position = position_dodge(width = 0.4))+
+  geom_text_repel(data = tmpend[sy.v,],inherit.aes = F,aes(x = End_year,y = lably, label = decomp,colour = decomp),nudge_x = -6,nudge_y = -2)+
+  geom_text_repel(data = tmpend[sl.v,],inherit.aes = F,aes(x = End_year,y = lably, label = decomp,colour = decomp),nudge_x = 2,nudge_y = -1)+
+  geom_text_repel(data = tmpend[sm.v,],inherit.aes = F,aes(x = End_year,y = lably, label = decomp,colour = decomp),nudge_y = 3,nudge_x = -0.5)+
+  scale_colour_manual(values = colye, aesthetics = c("colour","fill"))
+
+
+
+## update the theme?
+pdf(paste0(paste0("Figures/Fig 6.pdf")),
+    width = 5,
+    height = 4)
+print(cpt)
+dev.off()
+
+
+# END Figure 6 -----------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 fmod <- function(x){
   str_sub(x,start = 1,end = str_locate(x,pattern = " vs ")[,1]-1)
 }
