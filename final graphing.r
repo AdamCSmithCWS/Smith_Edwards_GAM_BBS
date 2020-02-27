@@ -28,15 +28,15 @@ names(contrast_full_names) = contr_names
 
 heavy_tailed = TRUE #all models use the t-distribution to model extra-Poisson variance
 
-
-demo_sp <- c("Horned Lark",
-             "American Kestrel",
-             "Barn Swallow",
-             "Wood Thrush",
-             "Chestnut-collared Longspur",
-             "Cooper's Hawk",
-             "Ruby-throated Hummingbird")
-
+# 
+# demo_sp <- c("Horned Lark",
+#              "American Kestrel",
+#              "Barn Swallow",
+#              "Wood Thrush",
+#              "Chestnut-collared Longspur",
+#              "Cooper's Hawk",
+#              "Ruby-throated Hummingbird")
+# 
 
 
 
@@ -63,8 +63,8 @@ dif_mod_year_over_out$M2 = paste("Favours",smod(dif_mod_year_over_out$Contrast_f
 
 
 dif_mod_labs = filter(dif_mod_year_over_out,species == demo_sp[1])
-dif_mod_labs$M1loc = 0.0025
-dif_mod_labs$M2loc = -0.0025
+dif_mod_labs$M1loc = 0.02
+dif_mod_labs$M2loc = -0.02
 
 
 # overall summary graphs --------------------------------------------------
@@ -155,16 +155,17 @@ dev.off()
 dif_mod_strat_out$M1 = paste("Favours",fmod(dif_mod_strat_out$Contrast_full_name))
 dif_mod_strat_out$M2 = paste("Favours",smod(dif_mod_strat_out$Contrast_full_name))
 
+for(comp in contr_names){
 # selecting only two of the possible model comparisons
-dif_s_p = filter(dif_mod_strat_out,Contrast_name %in% c("gam_slope"))
+dif_s_p = filter(dif_mod_strat_out,Contrast_name %in% comp)
 
 
 mxcounts = max(dif_s_p$ncounts)
 
 
 dif_mod_labs = dif_s_p[1,]
-dif_mod_labs$M1loc = 0.015
-dif_mod_labs$M2loc = -0.015
+dif_mod_labs$M1loc = 0.02
+dif_mod_labs$M2loc = -0.02
 dif_mod_labs$ncounts = mxcounts*0.8
 
 
@@ -193,13 +194,13 @@ n.comparison = ggplot(data = dif_s_p,aes(x = ncounts,y = mean,group = species,co
 
 
 
-pdf(paste0("sample size by strata full cross validation.pdf"),
+pdf(paste0("sample size by strata ",comp," cross validation.pdf"),
     width = 7,
     height = 8)
 print(n.comparison)
 dev.off()
 
-
+}
 
 
 

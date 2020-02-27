@@ -30,12 +30,14 @@ names(contrast_full_names) = contr_names
 heavy_tailed = TRUE #all models use the t-distribution to model extra-Poisson variance
 
 
-demo_sp <- c("Horned Lark",
-             "American Kestrel",
+demo_sp <- c("American Kestrel",
              "Barn Swallow",
              "Wood Thrush",
              "Chestnut-collared Longspur",
-             "Cooper's Hawk",
+             "Canada Warbler",
+             "Carolina Wren",
+             "Pine Siskin",
+             #"Cooper's Hawk",
              "Ruby-throated Hummingbird")
 
 jj = 1
@@ -84,23 +86,23 @@ dif_mod_year1$Contrast_full_name = contrast_full_names[dif_mod_year1$Contrast_na
 
   loo.point$sam = loo.point[,comp]
   
-  qq = ggplot(data = loo.point,aes(sample = sam))+
-      geom_qq(distribution = stats::qt,
-              dparams = list(df = m.both$mean$nu))+
-      geom_qq_line(distribution = stats::qt,
-                   dparams = list(df = m.both$mean$nu,),
-                   line.p = c(0.25,0.75))
-  png(file = paste0(sp_dir,"qq plot t-df-modeled ",comp,".png"))
-  print(qq)
-  dev.off()
-  
-  qq = ggplot(data = loo.point,aes(sample = sam))+
-    geom_qq()+
-    geom_qq_line()
-  
-  png(file = paste0(sp_dir,"qq plot ",comp,".png"))
-  print(qq)
-  dev.off()
+  # qq = ggplot(data = loo.point,aes(sample = sam))+
+  #     geom_qq(distribution = stats::qt,
+  #             dparams = list(df = m.both$mean$nu))+
+  #     geom_qq_line(distribution = stats::qt,
+  #                  dparams = list(df = m.both$mean$nu,),
+  #                  line.p = c(0.25,0.75))
+  # png(file = paste0(sp_dir,"qq plot t-df-modeled ",comp,".png"))
+  # print(qq)
+  # dev.off()
+  # 
+  # qq = ggplot(data = loo.point,aes(sample = sam))+
+  #   geom_qq()+
+  #   geom_qq_line()
+  # 
+  # png(file = paste0(sp_dir,"qq plot ",comp,".png"))
+  # print(qq)
+  # dev.off()
   
 
   
