@@ -38,7 +38,8 @@ demo_sp <- c("American Kestrel",
              "Carolina Wren",
              "Pine Siskin",
              #"Cooper's Hawk",
-             "Ruby-throated Hummingbird")
+             "Ruby-throated Hummingbird",
+             "Chimney Swift")
 
 jj = 1
 for(species in demo_sp){
