@@ -2,7 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
-**.pdf
+*.pdf
 *to_delete/
 *output/
 *old_models/
