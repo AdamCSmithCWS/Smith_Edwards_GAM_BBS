@@ -7,3 +7,6 @@
 *output/
 *old_models/
 *previous versions w precision/
+final_graphing.r
+comparison_summary_output.RData
+**archive/
