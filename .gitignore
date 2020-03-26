@@ -10,3 +10,6 @@
 final_graphing.r
 comparison_summary_output.RData
 **archive/
+gam_model_summaries_and_plotting.r
+gam_parameter_explore.r
+plotting_the_trajectories.r
