@@ -37,7 +37,7 @@ demo_sp <- c("American Kestrel",
              "Canada Warbler",
              "Carolina Wren",
              "Pine Siskin",
-             #"Cooper's Hawk",
+             "Cooper's Hawk",
              "Ruby-throated Hummingbird",
              "Chimney Swift")
 

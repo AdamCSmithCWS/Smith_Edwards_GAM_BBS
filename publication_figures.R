@@ -4,6 +4,7 @@ library(bbsBayes)
 library(ggplot2)
 library(ggrepel)
 library(ggforce)
+library(ggthemes)
 library(tidyverse)
 library(lme4)
 library(sf)
@@ -28,16 +29,16 @@ contrast_full_names = gsub(gsub(toupper(contr_names),pattern = "FIRSTDIFF",repla
 names(contrast_full_names) = contr_names
 
 
-demo_sp <- c("Pine Siskin",
-             "Horned Lark",
-             "Carolina Wren",
-             "American Kestrel",
-             "Barn Swallow",
-             "Wood Thrush",
-             "Chestnut-collared Longspur",
-             "Cooper's Hawk",
-             "Ruby-throated Hummingbird",
-             "Chimney Swift")
+# demo_sp <- c("Pine Siskin",
+#              "Canada Warbler",
+#              "Carolina Wren",
+#              "American Kestrel",
+#              "Barn Swallow",
+#              "Wood Thrush",
+#              "Chestnut-collared Longspur",
+#              "Cooper's Hawk",
+#              "Ruby-throated Hummingbird",
+#              "Chimney Swift")
 
 
 
@@ -48,24 +49,34 @@ demo_sp <- c("Pine Siskin",
 # colours -----------------------------------------------------------------
 
 
-source("colourblind safe qualitative pallete.r")
-species_pallete <- safe.pallet[[length(demo_sp)]] 
+#source("colourblind safe qualitative pallete.r")
+# species_pallete <- ggthemes::colorblind_pal()
+# species_pallete <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
+#                              "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
+
+species_pallete <- rep(viridis::viridis(5),each = 2)
+scales::show_col(species_pallete)
+
+#species_pallete <- RColorBrewer::brewer.pal(length(demo_sp),"Paired")
+
+
+#species_pallete <- safe.pallet[[length(demo_sp)]] 
 names(species_pallete) <- demo_sp
 
-model_pallete <- safe.pallet[[length(models)]] 
-model_pallete <- model_pallete[c(2,1,3,4)]
+model_pallete <- viridis::viridis(length(models))
+#model_pallete <- model_pallete[c(2,1,3,4)]
 names(model_pallete) <- models
+scales::show_col(model_pallete)
 
 
-colye = c(model_pallete["gamye"],safe.pallet[[6]][5] )
+colye = c(model_pallete["gamye"],viridis::viridis(7)[2] )
 names(colye) <- c("Including Year Effects","Smooth Only")
+scales::show_col(colye)
 
 
-c_orng = brewer.pal(9,"Set1")[5]
-c_red = brewer.pal(9,"Set1")[1]
-c_blue = brewer.pal(9,"Set1")[2]
-c_purp = brewer.pal(9,"Set1")[4]
-c_green = brewer.pal(9,"Set1")[3]
+c_orng = viridis::inferno(7)[6]
+c_red = viridis::inferno(7)[5]
+#scales::show_col( viridis::inferno(7))
 
 
 
@@ -73,7 +84,7 @@ c_green = brewer.pal(9,"Set1")[3]
 # run time summary --------------------------------------------------------
 
 runtime = data.frame(species = rep(demo_sp,each = length(models)),
-                     model = rep(models,times = length(species)))
+                     model = rep(models,times = length(demo_sp)))
 for(species in demo_sp){
 
 sp_dir = paste0("output/",species,"/")
@@ -181,12 +192,12 @@ cont_over = ggplot(data = indcont[-which(indcont$model %in% models[c(3,4)]),],ae
   coord_cartesian(ylim = c(0,uylim))+
   scale_x_continuous(breaks = seq(1970,2020,by = 10),expand = c(0,0))+
   scale_y_continuous(expand = c(0,0))+
-  geom_text_repel(data = labl_mods[4,],aes(x = Year,y = Index,label = Model),colour = grey(0.5), nudge_y = 0.075*uylim, nudge_x = 5)+
-  geom_text_repel(data = labl_obs,aes(x = Year,y = obs_mean,label = label),colour = grey(0.5),inherit.aes = F, nudge_y = -0.1*uylim, nudge_x = 5)+
+  geom_text_repel(data = labl_mods[4,],aes(x = Year,y = Index,label = Model,colour = model), nudge_y = 0.075*uylim, nudge_x = 5)+
+  geom_text_repel(data = labl_obs,aes(x = Year,y = obs_mean,label = label),colour = grey(0.7),inherit.aes = F, nudge_y = -0.1*uylim, nudge_x = 5)+
   geom_text_repel(data = labl_mods[1:2,],aes(x = Year,y = Index,label = Model,colour = model), nudge_y = 0.075*uylim, nudge_x = 5)+
   scale_colour_manual(values = model_pallete, aesthetics = c("colour","fill"))+
-  geom_ribbon(data = indcont[which(indcont$model %in% models[c(4)]),],aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975),fill = grey(0.5),alpha = 0.2)+
-  geom_line(data = indcont[which(indcont$model %in% models[c(4)]),],aes(x = Year,y = Index),colour = grey(0.7),size = 1.2)+
+  geom_ribbon(data = indcont[which(indcont$model %in% models[c(4)]),],aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975,fill = model),alpha = 0.2)+
+  geom_line(data = indcont[which(indcont$model %in% models[c(4)]),],aes(x = Year,y = Index,colour = model),size = 1.2)+
   
   geom_ribbon(aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975,fill = model),alpha = 0.2)+
   geom_line(aes(colour = model),size = 1.2)+
@@ -198,6 +209,71 @@ pdf(file = paste0("Figures/Fig 1.pdf"),
 print(cont_over)
 dev.off()
 
+
+pdf(file = paste0("Figures/supplement/Fig 1 by species.pdf"),
+    width = 5,
+    height = 4)
+
+for(species in demo_sp){
+  
+
+  sp_dir = paste0("output/",species,"/")
+  
+  load(paste0(sp_dir,"saved objects.RData"))
+  
+  inds = tosave$indsout
+  
+  
+  datt = tosave$datt
+  ncby_y = table(datt$Year)
+  ncby_y = round(ncby_y/50)
+  
+  dattc = data.frame(Year = rep(as.integer(names(ncby_y)),times = ncby_y))
+  
+  
+  
+  indcont = inds[which(inds$Region == "Continental"),]  
+  
+  indcont2 = indcont[which(indcont$model == "slope"),]
+  
+  uylim = max(c(indcont[which(indcont$model %in% c("gam","gamye","slope")),"Index_q_0.975"],indcont$obs_mean))
+  
+  labl_obs = unique(indcont[which(indcont$Year == 1970),c("Year","obs_mean")])
+  labl_obs$label = "Observed mean counts"
+  
+  mxy = tapply(indcont[which(indcont$Year %in% c(1970:2013)),"Index"],indcont[which(indcont$Year %in% c(1970:2013)),"model"],max)
+  
+  labl_mods = indcont[which(indcont$Index %in% mxy),]
+  labl_mods$Model = toupper(labl_mods$model)
+  labl_mods$Model[which(labl_mods$Model == "FIRSTDIFF")] <- "DIFFERENCE"
+  
+  cont_over = ggplot(data = indcont[-which(indcont$model %in% models[c(3,4)]),],aes(x = Year,y = Index,group = model))+
+    theme_classic()+
+    theme(legend.position = "none")+
+    labs(title = species)+
+    xlab(label = "")+
+    ylab(label = "Predicted mean count")+
+    geom_point(aes(x = Year,y = obs_mean),colour = grey(0.8),size = 0.8)+
+    coord_cartesian(ylim = c(0,uylim))+
+    scale_x_continuous(breaks = seq(1970,2020,by = 10),expand = c(0,0))+
+    scale_y_continuous(expand = c(0,0))+
+    #geom_text_repel(data = labl_mods[4,],aes(x = Year,y = Index,label = Model,colour = model), nudge_y = 0.075*uylim, nudge_x = 5)+
+    geom_text_repel(data = labl_obs,aes(x = Year,y = obs_mean,label = label),colour = grey(0.7),inherit.aes = F, nudge_y = -0.1*uylim, nudge_x = 5)+
+    geom_text_repel(data = labl_mods[c(1:2,4),],aes(x = Year,y = Index,label = Model,colour = model), nudge_y = 0.075*uylim, nudge_x = 5)+
+    scale_colour_manual(values = model_pallete, aesthetics = c("colour","fill"))+
+    geom_ribbon(data = indcont[which(indcont$model %in% models[c(4)]),],aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975,fill = model),alpha = 0.2)+
+    geom_line(data = indcont[which(indcont$model %in% models[c(4)]),],aes(x = Year,y = Index,colour = model),size = 1.2)+
+    
+    geom_ribbon(aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975,fill = model),alpha = 0.2)+
+    geom_line(aes(colour = model),size = 1.2)+
+    geom_dotplot(data = dattc,mapping = aes(x = Year),drop = T,binaxis = "x", stackdir = "up",method = "histodot",binwidth = 1,width = 0.2,inherit.aes = F,fill = grey(0.6),colour = grey(0.6),alpha = 0.2,dotsize = 0.3)
+  print(cont_over)
+  
+  
+}
+
+  dev.off()
+  
 
 
 # END figure 1 ------------------------------------------------------------
@@ -305,6 +381,104 @@ dev.off()
 
 
 
+
+
+
+
+pdf(file = paste0("Figures/supplement/Fig 2 by species.pdf"),
+    width = 5,
+    height = 4)
+model = "gamye"
+
+for(species in demo_sp){
+
+sp_dir = paste0("output/",species,"/")
+
+load(paste0(sp_dir,model,"/jags_data.RData"))  
+
+load(paste0(sp_dir,model,"/parameter_model_run.RData"))  
+raw.dat = jags_mod_param$model$cluster1$data()
+nknots = raw.dat$nknots
+nstrata = raw.dat$nstrata
+ndraws = length(jags_mod_param$sims.list$taubeta)
+
+
+sumr = as.data.frame(jags_mod_param$summary)
+
+B.X = sumr[paste0("B.X[",1:nknots,"]"),]
+
+beta.X = sumr[grep(row.names(sumr),pattern = "beta.X",fixed = T),]
+
+
+BXmat = jags_mod_param$sims.list[["B.X"]]
+basis = raw.dat$X.basis
+nyears = nrow(basis)
+cont.sm = matrix(NA,ncol = nyears,nrow = ndraws)
+for(y in 1:nyears){
+  
+  tmp = matrix(NA,nrow = ndraws,ncol = nknots)
+  for(k in 1:nknots){
+    tmp[,k] <- (BXmat[,k]*basis[y,k])
+  }
+  cont.sm[,y] <- exp(apply(tmp,1,sum))
+  
+}
+
+conti = data.frame(year = 1:ncol(cont.sm)+1965,
+                   med = apply(cont.sm,2,median),
+                   lci = apply(cont.sm,2,quantile,probs = 0.025),
+                   uci = apply(cont.sm,2,quantile,probs = 0.975))
+
+betaxmat = jags_mod_param$sims.list[["beta.X"]]
+
+
+for(s in 1:dim(betaxmat)[2]){
+  strat.sm = cont.sm
+  
+  for(y in 1:nrow(basis)){
+    tmp = matrix(NA,nrow = ndraws,ncol = nknots)
+    for(k in 1:nknots){
+      tmp[,k]  <- (betaxmat[,s,k]*basis[y,k])
+    }
+    strat.sm[,y] <- exp(apply(tmp,1,sum))
+  }#y
+  
+  tt = data.frame(year = 1:ncol(strat.sm)+1965,
+                  med = apply(strat.sm,2,median),
+                  lci = apply(strat.sm,2,quantile,probs = 0.025),
+                  uci = apply(strat.sm,2,quantile,probs = 0.975),
+                  strat = s)    
+  if(s == 1){
+    strati = tt
+  }else{
+    strati = rbind(strati,tt)
+  }
+  
+}
+
+strati$strat = factor(strati$strat)
+
+
+labls = conti[which(conti$year == 1980),]
+labls$labl = "Survey-wide mean trajectory"
+
+betaplot = ggplot(data = conti,aes(x = year,y = med))+
+  theme_classic()+
+  labs(title = species)+#paste0(species," GAM components including hyperparameter"))+
+  ylab("Population change based on GAM smooth (linear scale)")+
+  theme(legend.position = "none")+
+  geom_line(data = strati,aes(x = year, y = med,group = strat),alpha = 0.075)+
+  geom_text_repel(data = labls,aes(x = year,y = med,label = labl),nudge_x = 5,nudge_y = -0.75)+
+  coord_cartesian(ylim = c(0,max(conti$med)*2))+
+  scale_y_continuous(expand = c(0,0))+
+  scale_x_continuous(expand = c(0,0))+
+  geom_line(colour = grey(0.2),size = 1.4)
+
+  print(betaplot) 
+}
+dev.off()
+
+
 # END figure 2 ------------------------------------------------------------
 
 
@@ -369,7 +543,7 @@ datt$Region = datt$Stratum
 
 
 
-cont_over = ggplot(data = indsel[-which(indsel$model %in% models[c(3,4)]),],aes(x = Year,y = Index,group = model))+
+cont_over = ggplot(data = indsel[-which(indsel$model %in% models[c(2,3,4)]),],aes(x = Year,y = Index,group = model))+
   theme_classic()+
   theme(legend.position = "none")+
   xlab(label = "")+
@@ -379,7 +553,7 @@ cont_over = ggplot(data = indsel[-which(indsel$model %in% models[c(3,4)]),],aes(
   scale_y_continuous(expand = c(0,0))+
   geom_text_repel(data = labl_mods[4,],aes(x = Year,y = Index,label = Model),colour = grey(0.5), nudge_y = -10, nudge_x = -5)+
   geom_text_repel(data = labl_obs,aes(x = Year,y = obs_mean,label = label,group = Region),colour = grey(0.5),inherit.aes = F, nudge_y = -5, nudge_x = 1)+
-  geom_text_repel(data = labl_mods[1:2,],aes(x = Year,y = Index,label = Model,colour = model), nudge_y = 15, nudge_x = 2)+
+  geom_text_repel(data = labl_mods[1,],aes(x = Year,y = Index,label = Model,colour = model), nudge_y = 15, nudge_x = 2)+
   scale_colour_manual(values = model_pallete, aesthetics = c("colour","fill"))+
   geom_ribbon(data = indsel[which(indsel$model %in% models[c(4)]),],aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975),fill = grey(0.5),alpha = 0.2)+
   geom_line(data = indsel[which(indsel$model %in% models[c(4)]),],aes(x = Year,y = Index),colour = grey(0.7),size = 1.2)+
@@ -424,12 +598,13 @@ sp4 = data.frame(species = demo_sp,
                         "CAWA",
                         "CAWR",
                         "PISI",
+                        "COHA",
                         "RTHU",
                         "CHSW"),
                  stringsAsFactors = F)
 
-source("colourblind safe qualitative pallete.r")
-species_pallete <- safe.pallet[[length(demo_sp)]] 
+# source("colourblind safe qualitative pallete.r")
+# species_pallete <- safe.pallet[[length(demo_sp)]] 
 names(species_pallete) <- sp4$sp
 
 fmod <- function(x){
