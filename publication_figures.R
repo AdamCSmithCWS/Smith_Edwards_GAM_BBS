@@ -295,8 +295,6 @@ for(species in demo_sp){
   
 save(list = "svplots",file = "Figures/supplement/Fig 1 by species.RData")
 
-# END figure 1 ------------------------------------------------------------
-
 
 
 
@@ -508,9 +506,6 @@ dev.off()
 save(list = "svplots",file = "Figures/supplement/Fig 2 by species.RData")
 
 
-# END figure 2 ------------------------------------------------------------
-
-
 
 
 
@@ -603,9 +598,6 @@ dev.off()
 
 
 
-
-
-# END figure 3 ------------------------------------------------------------
 
 
 
@@ -789,14 +781,10 @@ dev.off()
 save(list = "overall.comparison",file = "Figures/supplement/Fig 4 all models.RData")
 
 
-# END Figure 4 ------------------------------------------------------------
 
 
 
-
-
-
-
+#
 
 # Figure 5 ----------------------------------------------------------------
 species = "Carolina Wren"
@@ -997,10 +985,6 @@ save(list = "svplots",file = "Figures/supplement/Fig 5 by species.RData")
 
 
 
-# End figure 5 ------------------------------------------------------------
-
-
-
 
 
 
@@ -1022,6 +1006,175 @@ save(list = "svplots",file = "Figures/supplement/Fig 5 by species.RData")
 
 
 # Figure 6 ----------------------------------------------------------------
+
+
+
+for(species in demo_sp){
+  model = "gamye"
+  
+  
+  
+  sp_dir = paste0("output/",species,"/")
+  
+  load(paste0(sp_dir,model,"/jags_data.RData"))  
+  
+  load(paste0(sp_dir,model,"/jags_mod_full.RData")) 
+  indx = generate_regional_indices(jags_mod = jags_mod_full,
+                                   jags_data = jags_data,
+                                   #quantiles = qs,
+                                   regions = c("continental"),
+                                   max_backcast = NULL,
+                                   alternate_n = "n")
+  fy = min(jags_data$r_year)
+  short_time = 10
+  YYYY = max(jags_data$r_year)
+  rollTrend = "Trend"
+  
+  
+  for(y in (fy+short_time):YYYY){
+    if(y == fy+short_time){
+      tmp = generate_regional_trends(indx,
+                                     Min_year = y-short_time,
+                                     Max_year = y)
+    }else{
+      tmp2 = generate_regional_trends(indx,
+                                      Min_year = y-short_time,
+                                      Max_year = y)
+      tmp = rbind(tmp,tmp2)
+    }
+    
+    
+  }#y
+  tmp$model = "gamye"
+  tmp$species = species
+  
+  
+  load(paste0(sp_dir,model,"/parameter_model_run.RData"))  
+  jags_mod_full = jags_mod_param
+  indx = generate_regional_indices(jags_mod = jags_mod_full,
+                                   jags_data = jags_data,
+                                   #quantiles = qs,
+                                   regions = c("continental"),
+                                   max_backcast = NULL,
+                                   alternate_n = "n3")
+  
+  
+  
+  for(y in (fy+short_time):YYYY){
+    
+    tmp2 = generate_regional_trends(indx,
+                                    Min_year = y-short_time,
+                                    Max_year = y)
+    tmp2$model = "gamye_alt"
+    tmp2$species = species
+    
+    tmp = rbind(tmp,tmp2)
+    
+    
+  }#y
+  
+  
+  for(model in models[-1]){
+    load(paste0(sp_dir,model,"/jags_data.RData"))  
+    
+    load(paste0(sp_dir,model,"/jags_mod_full.RData")) 
+    indx = generate_regional_indices(jags_mod = jags_mod_full,
+                                     jags_data = jags_data,
+                                     #quantiles = qs,
+                                     regions = c("continental"),
+                                     max_backcast = NULL,
+                                     alternate_n = "n")
+    
+    for(y in (fy+short_time):YYYY){
+      
+      tmp2 = generate_regional_trends(indx,
+                                      Min_year = y-short_time,
+                                      Max_year = y)
+      tmp2$model = model
+      tmp2$species = species
+      
+      tmp = rbind(tmp,tmp2)
+      
+      
+    }#y
+    
+  }
+  
+  if(species == demo_sp[1]){
+    tmpout = tmp
+  }else{
+    tmpout = rbind(tmpout,tmp)
+  }
+  
+  
+}#species
+
+modnames = data.frame(model = c("gamye",
+                                "gam",
+                                "firstdiff",
+                                "slope",
+                                "gamye_alt"),
+                      version = c("GAMYE - Including Year Effects",
+                                  "GAM",
+                                  "DIFFERENCE",
+                                  "SLOPE",
+                                  "GAMYE - Smooth Only"))
+
+modnames$version = factor(modnames$version,ordered = T,levels = modnames$version[c(5,2,3,4,1)])
+trends = merge(tmpout,modnames,by = "model")
+
+mean_abs_dif <- function(x){
+  mean(abs(diff(x)))
+}
+sd_abs_dif <- function(x){
+  sd(abs(diff(x)))
+}
+
+
+trend_difs <- trends %>% filter(species %in% c("Carolina Wren","Pine Siskin")) %>% group_by(version,species) %>% summarise(m_dif = mean_abs_dif(Trend),
+                                                                                                                           sd_dif = sd_abs_dif(Trend))
+
+
+
+trend_difs <- arrange(trend_difs,species,m_dif)
+
+coltrends = c(model_pallete,viridis::viridis(7)[6] )
+names(coltrends) <- modnames$version
+coltrends <- coltrends[c(2,5,3,4,1)]
+
+lbls = filter(trend_difs,species == "Carolina Wren")
+lbls$xx = 0.65+(as.integer(lbls$version)-1)*0.18
+
+trenddif = ggplot(data = trend_difs,aes(x = species,y = m_dif,colour = version,fill = version,group = version))+
+  geom_bar(position = "dodge",stat = "identity")+
+  scale_colour_manual(name = "",
+                      values = coltrends, aesthetics = c("colour","fill"))+
+  xlab("")+
+  ylab("Mean absolute change in annual 10-year trends")+
+  coord_flip()+
+  theme_classic()+
+  theme(legend.position = "none")+
+  geom_text_repel(data = lbls,aes(x = xx,y = m_dif, label = version),nudge_y = 2)
+
+
+
+pdf(file = paste0("Figures/Fig 6.pdf"),
+    width = 5,
+    height = 3)
+print(trenddif)
+dev.off()
+
+#save(list = "trenddif",file = "Figures/supplement/Fig alt.RData")
+
+
+
+
+
+
+
+# Figure 7 ----------------------------------------------------------------
+
+
 
 species = "Wood Thrush"
 model = "gamye"
@@ -1177,21 +1330,18 @@ cpt = ggplot(data = tmp,aes(x = End_year,y = rolt,group = decomp,colour = decomp
 
 
 ## update the theme?
-pdf(paste0(paste0("Figures/Fig 6.pdf")),
+pdf(paste0(paste0("Figures/Fig 7.pdf")),
     width = 5,
     height = 4)
 print(cpt)
 dev.off()
 
 
-# END Figure 6 -----------------------------------------------------------
 
 
 
 
-
-
-# Figure 7 ----------------------------------------------------------------
+# Figure 8 ----------------------------------------------------------------
 
 species = "Barn Swallow"
 
@@ -1246,7 +1396,7 @@ cont_over = ggplot(data = indcont,aes(x = Year,y = Index,group = model))+
   geom_line(aes(colour = model),size = 1.2)+
   geom_dotplot(data = dattc,mapping = aes(x = Year),drop = T,binaxis = "x", stackdir = "up",method = "histodot",binwidth = 1,width = 0.2,inherit.aes = F,fill = grey(0.6),colour = grey(0.6),alpha = 0.2,dotsize = 0.3)
 
-pdf(file = paste0("Figures/Fig 7.pdf"),
+pdf(file = paste0("Figures/Fig 8.pdf"),
     width = 5,
     height = 4)
 print(cont_over)
@@ -1260,7 +1410,7 @@ length(svplots) = length(demo_sp)
 names(svplots) = demo_sp
 
 
-pdf(file = paste0("Figures/supplement/Fig 7 all species.pdf"),
+pdf(file = paste0("Figures/supplement/Fig 8 all species.pdf"),
     width = 5,
     height = 4)
 
@@ -1326,17 +1476,15 @@ svplots[[species]] <- cont_over
 
 dev.off()
 
-save(list = "svplots",file = "Figures/supplement/Fig 7 by species.RData")
+save(list = "svplots",file = "Figures/supplement/Fig 8 by species.RData")
 
 
 
 
-# END Figure 7 ------------------------------------------------------------
 
 
 
-
-# Figure 8 ----------------------------------------------------------------
+# Figure 9 ----------------------------------------------------------------
 
 species = "Barn Swallow"
 
@@ -1401,7 +1549,7 @@ an_contr = ggplot(data = dif_mod_year,aes(x = Year,y = mean,group = Contrast_nam
   annotate(geom = "text",x = 2001,y = -0.012,label = "Negative favours alternate",size = 3.5,colour = grey(0.6))  
 
 
-pdf(paste0("Figures/Fig 8.pdf"),
+pdf(paste0("Figures/Fig 9.pdf"),
     width = 5,
     height = 4)
 print(an_contr)
@@ -1415,7 +1563,7 @@ svplots = list()
 length(svplots) = length(demo_sp)
 names(svplots) = demo_sp
 
-pdf(paste0("Figures/supplement/Fig 8 all species.pdf"),
+pdf(paste0("Figures/supplement/Fig 9 all species.pdf"),
     width = 5,
     height = 4)
 for(species in demo_sp){
@@ -1486,11 +1634,11 @@ for(species in demo_sp){
   
 }
 dev.off()
-save(list = "svplots",file = paste0("Figures/supplement/Fig 8 all species.RData"))
+save(list = "svplots",file = paste0("Figures/supplement/Fig 9 all species.RData"))
 
 
 
-# Figure 9 ----------------------------------------------------------------
+# Figure 10 ----------------------------------------------------------------
 
 
 species = "Barn Swallow"
@@ -1601,11 +1749,11 @@ for(i in c("A","B")){
       scale_colour_manual(values = modcomp_pallete, aesthetics = c("fill"))
 
       if(i == "B"){
-      pdf(file = paste0("Figures/Fig 9",i,".pdf"),
+      pdf(file = paste0("Figures/Fig 10",i,".pdf"),
           width = 4,
           height = 4)
       }else{
-        pdf(file = paste0("Figures/Fig 9.pdf"),
+        pdf(file = paste0("Figures/Fig 10.pdf"),
             width = 4,
             height = 4)
       }
@@ -1620,12 +1768,36 @@ for(i in c("A","B")){
 
 
 
-# END Figure 9 ------------------------------------------------------------
 
 
 
+## supplmental figure compile
 
+load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 1 by species.RData")
+svplots1 = svplots
+rm(svplots)
+load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 2 by species.RData")
+svplots2 = svplots
+rm(svplots)
+load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 4 all models.RData")
+load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 5 by species.RData")
+svplots4 = svplots
+rm(svplots)
+load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 7 by species.RData")
+svplots5 = svplots
+rm(svplots)
 
+load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 8 by species.RData")
+svplots6 = svplots
+rm(svplots)
+
+save(list = c("svplots1",
+              "svplots2",
+              "overall.comparison",
+              "svplots4",
+              "svplots5",
+              "svplots6"),
+     file = "figures/supplement/all_suppl_figures.RData")
 
 
 

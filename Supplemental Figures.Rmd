@@ -1,5 +1,5 @@
 ---
-title: ""
+title: "Supplemental_Material_Figure_S1"
 output: pdf_document
 ---
 
@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 <!-- Create figure captions -->
 ```{r, echo = FALSE}
-load(file = "Fig 1 by species.RData")
+load(file = "figures/supplement/Fig 1 by species.RData")
 species <- names(svplots)
 
 caption_list <- NULL
