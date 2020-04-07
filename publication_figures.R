@@ -228,7 +228,7 @@ svplots = list()
 length(svplots) = length(demo_sp)
 names(svplots) = demo_sp
 
-pdf(file = paste0("Figures/supplement/Fig 1 by species.pdf"),
+pdf(file = paste0("Figures/supplement/Fig 1 all species.pdf"),
     width = 5,
     height = 4)
 
@@ -293,7 +293,7 @@ for(species in demo_sp){
 
   dev.off()
   
-save(list = "svplots",file = "Figures/supplement/Fig 1 by species.RData")
+save(list = "svplots",file = "Figures/supplement/Fig 1 all species.RData")
 
 
 
@@ -408,7 +408,7 @@ length(svplots) = length(demo_sp)
 names(svplots) = demo_sp
 
 
-pdf(file = paste0("Figures/supplement/Fig 2 by species.pdf"),
+pdf(file = paste0("Figures/supplement/Fig 2 all species.pdf"),
     width = 5,
     height = 4)
 model = "gamye"
@@ -503,7 +503,7 @@ svplots[[species]] <- betaplot
 
 dev.off()
 
-save(list = "svplots",file = "Figures/supplement/Fig 2 by species.RData")
+save(list = "svplots",file = "Figures/supplement/Fig 2 all species.RData")
 
 
 
@@ -567,7 +567,7 @@ datt$Region = datt$Stratum
 
 
 
-cont_over = ggplot(data = indsel[-which(indsel$model %in% models[c(2,3,4)]),],aes(x = Year,y = Index,group = model))+
+cont_over = ggplot(data = indsel[-which(indsel$model %in% models[c(2,3)]),],aes(x = Year,y = Index,group = model))+
   theme_classic()+
   theme(legend.position = "none")+
   xlab(label = "")+
@@ -579,8 +579,8 @@ cont_over = ggplot(data = indsel[-which(indsel$model %in% models[c(2,3,4)]),],ae
   geom_text_repel(data = labl_obs,aes(x = Year,y = obs_mean,label = label,group = Region),colour = grey(0.5),inherit.aes = F, nudge_y = -5, nudge_x = 1)+
   geom_text_repel(data = labl_mods[1,],aes(x = Year,y = Index,label = Model,colour = model), nudge_y = 15, nudge_x = 2)+
   scale_colour_manual(values = model_pallete, aesthetics = c("colour","fill"))+
-  geom_ribbon(data = indsel[which(indsel$model %in% models[c(4)]),],aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975),fill = grey(0.5),alpha = 0.2)+
-  geom_line(data = indsel[which(indsel$model %in% models[c(4)]),],aes(x = Year,y = Index),colour = grey(0.7),size = 1.2)+
+  #geom_ribbon(data = indsel[which(indsel$model %in% models[c(4)]),],aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975),fill = grey(0.5),alpha = 0.2)+
+  #geom_line(data = indsel[which(indsel$model %in% models[c(4)]),],aes(x = Year,y = Index),colour = grey(0.7),size = 1.2)+
   geom_ribbon(aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975,fill = model),alpha = 0.2)+
   geom_line(aes(colour = model),size = 1.2)+
   geom_dotplot(data = datt,mapping = aes(x = Year),drop = T,binaxis = "x", 
@@ -603,8 +603,6 @@ dev.off()
 
 
 # Figure 4 ----------------------------------------------------------------
-load("comparison_summary_output.RData")
-
 
 
 
@@ -981,7 +979,7 @@ svplots[[species]] <- cont_over
 
 dev.off()
 
-save(list = "svplots",file = "Figures/supplement/Fig 5 by species.RData")
+save(list = "svplots",file = "Figures/supplement/Fig 5 all species.RData")
 
 
 
@@ -1476,7 +1474,7 @@ svplots[[species]] <- cont_over
 
 dev.off()
 
-save(list = "svplots",file = "Figures/supplement/Fig 8 by species.RData")
+save(list = "svplots",file = "Figures/supplement/Fig 8 all species.RData")
 
 
 
@@ -1773,23 +1771,24 @@ for(i in c("A","B")){
 
 ## supplmental figure compile
 
-load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 1 by species.RData")
+load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 1 all species.RData")
 svplots1 = svplots
 rm(svplots)
-load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 2 by species.RData")
+load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 2 all species.RData")
 svplots2 = svplots
 rm(svplots)
 load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 4 all models.RData")
-load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 5 by species.RData")
+load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 5 all species.RData")
 svplots4 = svplots
 rm(svplots)
-load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 7 by species.RData")
+load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 8 all species.RData")
 svplots5 = svplots
 rm(svplots)
 
-load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 8 by species.RData")
+load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 9 all species.RData")
 svplots6 = svplots
 rm(svplots)
+
 
 save(list = c("svplots1",
               "svplots2",

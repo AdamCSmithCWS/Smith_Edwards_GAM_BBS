@@ -1,0 +1,188 @@
+---
+title: "Supplemental Material Figures, Smith and Edwards Improved  status and trend estimates from the North American Breeding Bird Survey using a hierarchical Bayesian hierarchical generalized additive model"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(captioner)
+
+```
+
+<!-- load figures and species -->
+```{r, echo = FALSE}
+
+load("c:/GAM_Paper_Script/figures/supplement/all_suppl_figures.RData")
+
+species <- names(svplots1)
+
+capt_s1 = captioner(prefix = "Figure S",levels = 2,
+          auto_space = F,type = c("n","C"),infix = ".")
+
+
+capts <- vector(length = length(species))
+names(capts) <- species
+for (sp in species)
+{
+  capts[sp] <- capt_s1(name = paste0(sp,1),caption = paste0("Survey-wide population trajectories for ", sp, " estimated from the BBS using two models described here that include a GAM smoothing function to model change over time (GAM and GAMYE) and a third trajectory estimated using the standard slope-based model used for BBS status and trend assessments since 2011 (SLOPE). The stacked dots along the x-axis indicate the approximate number of BBS counts used in the model; each dot represents 50 counts."),
+          level = 2)
+  
+}
+
+```
+
+```{r svplots1, fig.cap = capts,echo=FALSE}
+
+
+for(sp in species){
+   print(svplots1[[sp]])
+  cat("\n\n")
+  
+}
+
+```
+
+
+
+
+```{r, echo = FALSE}
+
+bump(capt_s1,level = 1)
+
+capts <- vector(length = length(species))
+names(capts) <- species
+for (sp in species)
+{
+  capts[sp] <- capt_s1(name = paste(sp,2),caption = paste0("Variation among the spatial strata in the random-effect smooth components of the GAMYE model applied to  ", sp, " data from the BBS. Grey lines show the strata-level random-effect smooths, and the black lines shows the survey-wide mean trajectory. "),
+          level = 2)
+  
+}
+
+```
+
+```{r svplots2, fig.cap = capts,echo=FALSE}
+
+
+for(sp in species){
+   print(svplots2[[sp]])
+  cat("\n\n")
+  
+}
+
+```
+
+
+```{r, echo = FALSE}
+
+bump(capt_s1,level = 1)
+
+capts <-NULL
+  capts <- capt_s1(name = paste("overcomp",3),caption = paste0("Overall pair-wise differences in predictive fit between all models for Barn Swallow and 8 other selected species. Species short forms are WOTH = Wood Thrush (Hylocichla mustelina), RTHU = Ruby-throated Hummingbird (Archilochus colubris), PISI = Pine Siskin (Spinus pinus), Cooper’s Hawk (Accipiter cooperii), CHSW = Chimney Swift (Chaetura pelagica), CCLO = Chestnut-collared Longspur (Calcarius ornatus), CAWR = Carolina Wren (Thryothorus ludovicianus), CAWA = Canada Warbler (Cardellina canadensis), MAKE = American Kestrel (Falco sparverius)."),
+          level = 2)
+  
+
+
+```
+
+```{r overall.comparison, fig.cap = capts,echo=FALSE}
+
+
+
+   print(overall.comparison)
+  cat("\n\n")
+  
+
+
+```
+
+
+
+
+```{r, echo = FALSE}
+
+bump(capt_s1,level = 1)
+
+capts <- vector(length = length(species))
+names(capts) <- species
+for (sp in species)
+{
+  capts[sp] <- capt_s1(name = paste(sp,2),caption = paste0("Decomposition of the survey-wide population trajectory for ", sp, " from the GAMYE, showing the full trajectory (Including Year Effects) and the isolated smooth component (Smooth Only), which can be used to estimate population trends that are less sensitive to the particular year in which they are estimated. The stacked dots along the x-axis indicate the approximate number of BBS counts used in the model; each dot represents 50 counts. "),
+          level = 2)
+  
+}
+
+```
+
+```{r svplots4, fig.cap = capts,echo=FALSE}
+
+
+for(sp in species){
+   print(svplots4[[sp]])
+  cat("\n\n")
+  
+}
+
+```
+
+
+
+
+```{r, echo = FALSE}
+
+bump(capt_s1,level = 1)
+
+capts <- vector(length = length(species))
+names(capts) <- species
+for (sp in species)
+{
+  capts[sp] <- capt_s1(name = paste(sp,2),caption = paste0(". Predicted survey-wide population trajectories from four models applied to the ", sp, " data from the BBS. The stacked dots along the x-axis indicate the approximate number of BBS counts used in the model; each dot represents 50 counts."),
+          level = 2)
+  
+}
+
+```
+
+```{r svplots5, fig.cap = capts,echo=FALSE}
+
+
+for(sp in species){
+   print(svplots5[[sp]])
+  cat("\n\n")
+  
+}
+
+```
+
+
+
+
+
+```{r, echo = FALSE}
+
+bump(capt_s1,level = 1)
+
+capts <- vector(length = length(species))
+names(capts) <- species
+for (sp in species)
+{
+  capts[sp] <- capt_s1(name = paste(sp,2),caption = paste0("Annual differences in predictive fit between the GAMYE and SLOPE (blue) and the GAMYE and DIFFERENCE model (red) for ", sp),
+          level = 2)
+  
+}
+
+```
+
+```{r svplots6, fig.cap = capts,echo=FALSE}
+
+
+for(sp in species){
+   print(svplots6[[sp]])
+  cat("\n\n")
+  
+}
+
+```
+
+
