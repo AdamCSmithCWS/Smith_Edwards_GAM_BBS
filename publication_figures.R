@@ -1,3 +1,6 @@
+# This script produces all of the figures in the manuscript, and provides the .RData file
+# used to generate the supplemental material figures in Supplmental Material Figures.Rmd
+
 
 
 library(bbsBayes)

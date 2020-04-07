@@ -1,5 +1,7 @@
 #comparison_summary script
 
+#### this script summarises the results of comparison_script.R
+### produces some intermediate plots and prepares the results needed for the publication_figures.R
 
 
 library(bbsBayes)
@@ -283,28 +285,6 @@ pdf(paste0(sp_dir,species," geographic cross validation.pdf"),
 print(str_contr)
 dev.off()
 
-
-# mapping distribution of the BPIC values -----------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# overall comparison, no stratification -----------------------------------
 
 
 

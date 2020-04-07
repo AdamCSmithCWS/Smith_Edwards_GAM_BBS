@@ -1,9 +1,14 @@
 ### comparing the results of the k-fold cross validation
+## run after the script_kfold.R
+
+### this compiles the cross validation results, prepares them for subsequent analysis and does some
+### exploratory plotting of the results
 library(bbsBayes)
 library(ggplot2)
 library(ggrepel)
 library(ggforce)
 library(tidyverse)
+library(viridis)
 
 
 models = c("gamye","gam","firstdiff","slope")
@@ -13,10 +18,13 @@ species_to_run = c("Carolina Wren","Pine Siskin","Horned Lark","Wood Thrush", "A
 
 
 
-external_drive = F #set to true if running from external drive
+external_drive = F #set to true if running from results stored on an external drive
 
 
-for(species in species_to_run[1]){
+# Compiling the cross-validation output -----------------------------------
+
+
+for(species in species_to_run){
 
 sp_dir = paste0("output/",species,"/")
 #### calculate all annual indices (strata and continental)
@@ -33,13 +41,11 @@ names(all_inds) = models
 
 ### colour pallette
 
-source("colourblind safe qualitative pallete.r")
-model_pallete <- safe.pallet[[4]] 
-model_pallete <- model_pallete[c(2,1,3,4)]
-
+model_pallete <- viridis::viridis(length(models))
+model_pallete <- model_pallete[c(2,4,3,1)]
 names(model_pallete) <- models
 
-### ggplot2::scale_colour_manual(values = map_palette, aesthetics = c("colour","fill"))+
+
 
 K = 15
 n.iter = 3000 
@@ -147,16 +153,6 @@ for(m in models){
 
 alldat$unit = factor(paste(alldat$Stratum,alldat$Route,alldat$Year,sep = "_"))
 
-# x11()
-# plot(alldat$prec.loo,1/((alldat$q0.975.loo - alldat$q0.025.loo)/(1.96*2))^2)
-# plot(alldat$q0.5.loo,alldat$mean.loo)
-# plot(alldat$q0.5.loo,((alldat$q0.975.loo - alldat$q0.025.loo)/(1.96*2))^2)
-
-# abline(0,1)
-#above suggests that the raw sd calculation is an overestimate of the error, and prone to some extreme values, likely because the point-wise loo stats have some very large tails
-# replace with an alternative measure of precision that should be less sensitive to the tails
-
-# alldat$prec.loo <- 1/((alldat$q0.975.loo - alldat$q0.025.loo)/(1.96*2))^2
 
 
 write.csv(alldat,paste0(sp_dir," all models point-wise log prob.csv"))
@@ -181,6 +177,9 @@ indcont2 = indcont[which(indcont$model == "slope"),]
 
 uylim = max(c(indcont$Index_q_0.975,indcont$obs_mean))
 indcont2$prts = (indcont2$nrts/indcont2$nrts_total)*uylim
+
+
+# exploratory plotting of the estimated trajectories ----------------------------------
 
 
 
@@ -273,12 +272,7 @@ for(pp in unique(indstrata$Region)){
 dev.off()
 
 
-##### load the cross-validation estimates
 
-
-#### overall fit comparisons.
-
-#alldat$prec.loo = 1/((alldat$q0.0975.loo - alldat$q0.025.loo)/(1.96*2))^2
 
 save(list = c("tosave"),file = paste0(sp_dir,"saved objects.RData"))
 torm = c(names(tosave)[-which(names(tosave) %in% c("species","models"))],"jags_data","loo","lambda.posterior","dat.df","indcont","indcont2","indstrat")
@@ -308,27 +302,20 @@ rm(list = c("tosave",torm))
 
 
 
+# modeling the cross-validation results -----------------------------------
 
-library(bbsBayes)
-library(ggplot2)
-library(ggrepel)
-library(ggforce)
-library(tidyverse)
+############### this section accounts for the non-normal distribution of the lppd values and their pairwise differences
 
-
-
-models = c("gamye","gam","firstdiff","slope")
-heavy_tailed = TRUE #all models use the t-distribution to model extra-Poisson variance
 
 # species_to_run = c("Wood Thrush", "American Kestrel","Barn Swallow","Chestnut-collared Longspur","Cooper's Hawk","Ruby-throated Hummingbird")
 
 
-for(species in species_to_run[1]){
+for(species in species_to_run){
   
   sp_dir = paste0("output/",species,"/")
   
   load(paste0(sp_dir,"saved objects.RData"))
-############ Bayesian model estimating the difference in fit among models while accounting for the uncertainty in the point-wise loo
+#######
 alldat = tosave$alldat
 
 
@@ -346,30 +333,9 @@ loo.point <- alldat %>% select(.,Year:ki,model,mean.loo) %>%
   pivot_wider(names_from = model,values_from = c(mean.loo),values_fn = list(mean.loo = mean))
 
 
-# alldat$modelprec = paste(alldat$model,"prec",sep = "_")
-# prec.loo.point <- alldat %>% select(.,Year:ki,modelprec,prec.loo) %>%
-#   pivot_wider(names_from = modelprec,values_from = c(prec.loo),values_fn = list(prec.loo = mean))
-# 
-# 
-# loo.point <- left_join(med.loo.point,prec.loo.point)
-
-### the mean function is required because (apparrently) there are two route-year combinations that are repeated in the dataset
-
 for(i in 1:nrow(loo.point)){
   loo.point[i,"best"] <- models[which.max(loo.point[i,models])]
 }
-
-# contr_names = c(paste(models[1],models[2],sep = "_"),
-#                 paste(models[1],models[3],sep = "_"),
-#                 paste(models[1],models[4],sep = "_"),
-#                 paste(models[2],models[3],sep = "_"),
-#                 paste(models[2],models[4],sep = "_"),
-#                 paste(models[3],models[4],sep = "_")
-# )
-# 
-# contrast_full_names = gsub(gsub(toupper(contr_names),pattern = "FIRSTDIFF",replacement = "DIFFERENCE",fixed = T),pattern = "_",replacement = " vs ",fixed = T)
-# names(contrast_full_names) = contr_names
-
 
 loo.point[,"gamye_gam"] <- loo.point[,"gamye"] -loo.point[,"gam"]
 
@@ -386,7 +352,10 @@ loo.point[,"firstdiff_slope"] <- loo.point[,"firstdiff"] -loo.point[,"slope"]
 write.csv(loo.point,paste0(sp_dir,"wide form lppd.csv"))
 
 
-# 
+# demonstration of the non-normal distributions of the lppd differ --------
+
+
+# uncomment to see qq plots of the differences 
 # qq = ggplot(data = loo.point,aes(sample = gamye_firstdiff))+
 #   geom_qq()+
 #   geom_qq_line()
@@ -428,19 +397,10 @@ write.csv(loo.point,paste0(sp_dir,"wide form lppd.csv"))
 }#species
 
 
-# 
-# hist(loo.point$gamye_firstdiff)
-# #########
-# 
-# 
-#  
+# parallel running of summary models ------------------------------------
 
 
-# library(bbsBayes)
-# library(ggplot2)
-# library(ggrepel)
-# library(ggforce)
-# library(tidyverse)
+
 library(foreach)
 library(doParallel)
 
@@ -456,11 +416,6 @@ contrast_full_names = gsub(gsub(toupper(contr_names),pattern = "FIRSTDIFF",repla
 names(contrast_full_names) <- contr_names
 
 
-# models = c("gamye","gam","firstdiff","slope")
-# heavy_tailed = TRUE #all models use the t-distribution to model extra-Poisson variance
-# 
-# species_to_run = c("Wood Thrush", "American Kestrel","Barn Swallow","Chestnut-collared Longspur","Cooper's Hawk","Ruby-throated Hummingbird")
-
 
 # running comparison models in parallel -----------------------------------
 
@@ -471,6 +426,7 @@ registerDoParallel(cluster)
 ########################
 ##############
 ############## consider fixing nu at 3, sensu "robust regression" model in Gelman BDA pg 440.
+############## greatly reduces run times and generates effectively the same results
 
 foreach(m = 1:length(species_to_run),
         .packages = 'jagsUI',
@@ -492,18 +448,7 @@ nyears = max(year)
 strat = loo.point$Stratum_Factored
 nstrat = max(strat)
 
-#fit2 = loo.point$firstdiff
 
-# load(paste0(sp_dir,"saved objects3.RData"))
-# tosav.orig = tosave2out
-# rm(tosave2out)
-
-# tosave2out = list(gamye_firstdiff = tosav.orig[["gamye_firstdiff"]],
-# gamye_slope = tosav.orig[["gamye_slope"]],
-# gamye_gam = tosav.orig[["gamye_gam"]],
-# gam_slope = tosav.orig[["gam_slope"]],
-# gam_firstdiff = NA,
-# firstdiff_slope = NA)
 
 tosave2out = list(gamye_firstdiff = NA,
                   gamye_slope = NA,

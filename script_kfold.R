@@ -1,9 +1,11 @@
 ###################################################
 # Adam C. Smith & Brandon P.M. Edwards
 # GAM Paper Script
-# gam-kfold-bbsBayes.R
+# This is the main computational script that fits each of the four models to each of the 10 species
+# then it runs the 15-fold cross validation for each species and model
+## to run as coded here requires a computer with at least 15 cores and at least 64 GB of RAM
 # Created July 2019
-# Last Updated July 2019
+# Last Updated April 2020
 ###################################################
 
 ###################################################
@@ -21,10 +23,7 @@ n_adapt = 1000
 
 dir.create("output", showWarnings = F)
 
-# Install v1.1.2 from Github (comment these three lines out if already installed:
-# install.packages("devtools")
-# library(devtools)
-# devtools::install_github("BrandonEdwards/bbsBayes")#, ref = "v1.1.2")
+# Install v1.1.2 from Github 
 
 library(bbsBayes)
 library(foreach)
@@ -35,6 +34,7 @@ library(tidyr)
 # Only need to run this if you don't have BBS data saved
 # in directory on your computer
 # yes immediately following to agree to terms and conditions
+####################################
 # fetch_bbs_data()
 # yes
 
@@ -48,10 +48,7 @@ species_to_run <- c("Barn Swallow",
                     "Ruby-throated Hummingbird",
                     "Chestnut-collared Longspur",
                     "Cooper's Hawk",
-                    "Wild Turkey",
-                    "Horned Lark",
                     "Canada Warbler",
-                    "Evening Grosbeak",
                     "Carolina Wren",
                     "Pine Siskin")
 
@@ -62,7 +59,7 @@ models <- c("firstdiff", "gam", "gamye","slope")
 # Analysis by Species X Model Combination
 ###################################################
 
-for (species in species_to_run[c(12,13,7)])
+for (species in species_to_run)
 {
   sp.dir = paste0("output/", species)
   dir.create(sp.dir)
@@ -87,11 +84,12 @@ for (species in species_to_run[c(12,13,7)])
       kk[wstrat] = as.integer(ceiling(runif(length(wstrat),0,K))) 
     }
     
-    
+    ### saving the k-fold identifiers so that they're the same across all models
     save(kk,file = sp.k)
   }
     
     # Set up parallel stuff
+  # requires only 4 cores to run each model in parallel for species
     n_cores <- length(models)
     cluster <- makeCluster(n_cores, type = "PSOCK")
     registerDoParallel(cluster)
@@ -138,6 +136,7 @@ foreach(m = 1:4,
      save(jags_mod_full, file = paste0(model_dir, "/jags_mod_full.RData"))
     
     ##################### TRENDS AND TRAJECTORIES #################
+     ### this trend calculation and plotting is not necessary, only for model-checking 
     dir.create(paste0(model_dir, "/plots"))
     
     # Stratum level
@@ -205,6 +204,7 @@ for(model in models){
     model_file <- paste0("loo-models/", model, "-loo.jags")
     
     # Set up parallel stuff
+    # requires 15 cores to run each cross-validation fold in parallel
     n_cores <- K
     cluster <- makeCluster(n_cores, type = "PSOCK")
     registerDoParallel(cluster)
@@ -254,20 +254,7 @@ for(model in models){
     
     stopCluster(cl = cluster)
     
-    # true_count <- jags_data$count
-    # true_index <- NULL
-    # for (kk2 in 1:K)
-    # {
-    #   true_index <- c(true_index, which(jags_data$ki == kk2))
-    # }
-    # 
-    # loocv <- numeric(length = length(true_count))
-    # for (i in 1:length(true_count))
-    # {
-    #   loocv[i] <- log(mean(dpois(true_count[true_index[i]], posterior[,i])))
-    # }
-    # 
-    # save(loocv, file = paste0(model_dir, "/cv/loocv.RData"))
+
   }
 
 }#end species loop
