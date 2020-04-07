@@ -23,7 +23,8 @@ n_adapt = 1000
 
 dir.create("output", showWarnings = F)
 
-# Install v1.1.2 from Github 
+# Install bbsBayes from Zenodo 
+#Edwards, B.P.M. and A.C. Smith (2020). bbsBayes v2.1.0 (Version 2.1.0). Zenodo. 485 doi:10.5281/zenodo.3727279
 
 library(bbsBayes)
 library(foreach)

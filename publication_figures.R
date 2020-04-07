@@ -774,7 +774,7 @@ overall.comparison = ggplot(data = dif_mod_year_over_out2,aes(x = Contrast_full_
 
 pdf(paste0("figures/supplement/Fig 4 all models.pdf"),
     width = 5,
-    height = 9)
+    height = 7)
 print(overall.comparison)
 dev.off()
 
