@@ -13,6 +13,7 @@ library(lme4)
 library(sf)
 library(RColorBrewer)
 library(facetscales)
+library(patchwork)
 
 load("comparison_summary_output.RData")
 
@@ -42,6 +43,8 @@ names(contrast_full_names) = contr_names
 #              "Cooper's Hawk",
 #              "Ruby-throated Hummingbird",
 #              "Chimney Swift")
+
+
 
 
 
@@ -165,6 +168,15 @@ write.csv(pch,"figures/supplement/runtime summary across models and species.csv"
 # Figure 1 ----------------------------------------------------------------
 
 
+svplots = list()
+length(svplots) = 6
+names(svplots) = c("Barn Swallow",
+                   "Wood Thrush",
+                   "Cooper's Hawk",
+                   "Carolina Wren",
+                   "Ruby-throated Hummingbird",
+                   "Chimney Swift")
+
 species = "Barn Swallow"
 
 sp_dir = paste0("output/",species,"/")
@@ -176,11 +188,10 @@ inds = tosave$indsout
 
 datt = tosave$datt
 ncby_y = table(datt$Year)
-ncby_y = round(ncby_y/50)
+nstrat_scl = max(datt$Stratum_Factored)
+ncby_y = ceiling(ncby_y/50)
 
 dattc = data.frame(Year = rep(as.integer(names(ncby_y)),times = ncby_y))
-
-
 
 indcont = inds[which(inds$Region == "Continental"),]  
 
@@ -191,14 +202,21 @@ uylim = max(c(indcont$Index_q_0.975,indcont$obs_mean))
 labl_obs = unique(indcont[which(indcont$Year == 1970),c("Year","obs_mean")])
 labl_obs$label = "Observed mean counts"
 
-mxy = tapply(indcont[which(indcont$Year %in% c(1970:2013)),"Index"],indcont[which(indcont$Year %in% c(1970:2013)),"model"],max)
+# mxy = tapply(indcont[which(indcont$Year %in% c(1970:2013)),"Index"],indcont[which(indcont$Year %in% c(1970:2013)),"model"],max)
 
-labl_mods = indcont[which(indcont$Index %in% mxy),]
+ww = which((indcont$model == "slope" & indcont$Year == 1970) |
+             (indcont$model == "gamye" & indcont$Year == 1980) |
+             (indcont$model == "gam" & indcont$Year == 1989) |
+             (indcont$model == "firstdiff" & indcont$Year == 1994))
+
+
+labl_mods = indcont[ww,]
 labl_mods$Model = toupper(labl_mods$model)
 labl_mods$Model[which(labl_mods$Model == "FIRSTDIFF")] <- "DIFFERENCE"
 
-cont_over = ggplot(data = indcont[-which(indcont$model %in% models[c(3,4)]),],aes(x = Year,y = Index,group = model))+
+cont_over = ggplot(data = indcont,aes(x = Year,y = Index,group = model))+
   theme_classic()+
+  labs(title = species)+
   theme(legend.position = "none")+
   xlab(label = "")+
   ylab(label = "Predicted mean count")+
@@ -206,38 +224,21 @@ cont_over = ggplot(data = indcont[-which(indcont$model %in% models[c(3,4)]),],ae
   coord_cartesian(ylim = c(0,uylim))+
   scale_x_continuous(breaks = seq(1970,2020,by = 10),expand = c(0,0))+
   scale_y_continuous(expand = c(0,0))+
-  geom_text_repel(data = labl_mods[4,],aes(x = Year,y = Index,label = Model,colour = model), nudge_y = 0.075*uylim, nudge_x = 5)+
-  geom_text_repel(data = labl_obs,aes(x = Year,y = obs_mean,label = label),colour = grey(0.7),inherit.aes = F, nudge_y = -0.1*uylim, nudge_x = 5)+
-  geom_text_repel(data = labl_mods[1:2,],aes(x = Year,y = Index,label = Model,colour = model), nudge_y = 0.075*uylim, nudge_x = 5)+
+  annotate(geom = "text",x = 1985,y = uylim*0.05,label = "Routes/50",colour = grey(0.6)) +
+  geom_text_repel(data = labl_obs,aes(x = Year,y = obs_mean,label = label),colour = grey(0.5),inherit.aes = F, nudge_y = -0.1*uylim, nudge_x = 5)+
+  geom_text_repel(data = labl_mods,aes(x = Year,y = Index,label = Model,colour = model), nudge_y = 0.075*uylim, nudge_x = 5)+
   scale_colour_manual(values = model_pallete, aesthetics = c("colour","fill"))+
-  geom_ribbon(data = indcont[which(indcont$model %in% models[c(4)]),],aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975,fill = model),alpha = 0.2)+
-  geom_line(data = indcont[which(indcont$model %in% models[c(4)]),],aes(x = Year,y = Index,colour = model),size = 1.2)+
   
   geom_ribbon(aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975,fill = model),alpha = 0.2)+
   geom_line(aes(colour = model),size = 1.2)+
   geom_dotplot(data = dattc,mapping = aes(x = Year),drop = T,binaxis = "x", stackdir = "up",method = "histodot",binwidth = 1,width = 0.2,inherit.aes = F,fill = grey(0.6),colour = grey(0.6),alpha = 0.2,dotsize = 0.3)
 
-pdf(file = paste0("Figures/Fig 1.pdf"),
-    width = 5,
-    height = 4)
-print(cont_over)
-dev.off()
 
+svplots[[species]] <- cont_over
 
-
-# species versions for supplement -----------------------------------------
-
-svplots = list()
-length(svplots) = length(demo_sp)
-names(svplots) = demo_sp
-
-pdf(file = paste0("Figures/supplement/Fig 1 all species.pdf"),
-    width = 5,
-    height = 4)
-
-for(species in demo_sp){
+for(species in names(svplots)[-1]){
   
-
+  
   sp_dir = paste0("output/",species,"/")
   
   load(paste0(sp_dir,"saved objects.RData"))
@@ -247,58 +248,130 @@ for(species in demo_sp){
   
   datt = tosave$datt
   ncby_y = table(datt$Year)
-  ncby_y = round(ncby_y/50)
+  nstrat_scl = max(datt$Stratum_Factored)
+  ncby_y = ceiling(ncby_y/50)
   
   dattc = data.frame(Year = rep(as.integer(names(ncby_y)),times = ncby_y))
-  
-  
   
   indcont = inds[which(inds$Region == "Continental"),]  
   
   indcont2 = indcont[which(indcont$model == "slope"),]
   
-  uylim = max(c(indcont[which(indcont$model %in% c("gam","gamye","slope")),"Index_q_0.975"],indcont$obs_mean))
+  uylim = min(c(max(c(indcont$Index_q_0.975,indcont$obs_mean)),max(indcont$Index * 3)))
   
   labl_obs = unique(indcont[which(indcont$Year == 1970),c("Year","obs_mean")])
   labl_obs$label = "Observed mean counts"
   
-  mxy = tapply(indcont[which(indcont$Year %in% c(1970:2013)),"Index"],indcont[which(indcont$Year %in% c(1970:2013)),"model"],max)
+  # 
   
-  labl_mods = indcont[which(indcont$Index %in% mxy),]
+  cont_over = ggplot(data = indcont,aes(x = Year,y = Index,group = model))+
+    theme_classic()+
+    theme(legend.position = "none")+
+    xlab(label = "")+
+    ylab(label = "Predicted mean count")+
+    labs(title = species)+
+    geom_point(aes(x = Year,y = obs_mean),colour = grey(0.8),size = 0.8)+
+    coord_cartesian(ylim = c(0,uylim))+
+    scale_x_continuous(breaks = seq(1970,2020,by = 10),expand = c(0,0))+
+    scale_y_continuous(expand = c(0,0))+
+    #geom_text_repel(data = labl_obs,aes(x = Year,y = obs_mean,label = label),colour = grey(0.5),inherit.aes = F, nudge_y = -0.1*uylim, nudge_x = 5)+
+    #geom_text_repel(data = labl_mods,aes(x = Year,y = Index,label = Model,colour = model), nudge_y = 0.075*uylim, nudge_x = runif(1,-3,3))+
+    scale_colour_manual(values = model_pallete, aesthetics = c("colour","fill"))+
+    
+    geom_ribbon(aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975,fill = model),alpha = 0.15)+
+    geom_line(aes(colour = model),size = 1.2)+
+    geom_dotplot(data = dattc,mapping = aes(x = Year),drop = T,binaxis = "x", stackdir = "up",method = "histodot",binwidth = 1,width = 0.2,inherit.aes = F,fill = grey(0.6),colour = grey(0.6),alpha = 0.2,dotsize = 0.3)
+  
+  svplots[[species]] <- cont_over
+ 
+}
+
+
+
+pdf(file = paste0("Figures/Fig 1.pdf"),
+    width = 7,
+    height = 9.5)
+print(svplots[[1]] + svplots[[2]] + svplots[[3]] + svplots[[4]] + svplots[[5]] + svplots[[6]] + plot_layout(ncol = 2))
+dev.off()
+
+
+# species versions for supplement ------------------------------------------
+
+svplots = list()
+length(svplots) = length(demo_sp)
+names(svplots) = demo_sp
+
+
+pdf(file = paste0("Figures/supplement/Fig 1 all species.pdf"),
+    width = 5,
+    height = 4)
+
+for(species in demo_sp){
+  
+  
+  sp_dir = paste0("output/",species,"/")
+  
+  load(paste0(sp_dir,"saved objects.RData"))
+  
+  inds = tosave$indsout
+  
+  
+  
+  datt = tosave$datt
+  ncby_y = table(datt$Year)
+  nstrat_scl = max(datt$Stratum_Factored)
+  ncby_y = ceiling(ncby_y/50)
+  
+  dattc = data.frame(Year = rep(as.integer(names(ncby_y)),times = ncby_y))
+  
+  indcont = inds[which(inds$Region == "Continental"),]  
+  
+  indcont2 = indcont[which(indcont$model == "slope"),]
+  
+  uylim = max(c(indcont$Index_q_0.975,indcont$obs_mean))
+  
+  labl_obs = unique(indcont[which(indcont$Year == 1970),c("Year","obs_mean")])
+  labl_obs$label = "Observed mean counts"
+  
+  # mxy = tapply(indcont[which(indcont$Year %in% c(1970:2013)),"Index"],indcont[which(indcont$Year %in% c(1970:2013)),"model"],max)
+  
+  ww = which((indcont$model == "slope" & indcont$Year == 1970) |
+               (indcont$model == "gamye" & indcont$Year == 1980) |
+               (indcont$model == "gam" & indcont$Year == 1989) |
+               (indcont$model == "firstdiff" & indcont$Year == 1986))
+  
+  
+  labl_mods = indcont[ww,]
   labl_mods$Model = toupper(labl_mods$model)
   labl_mods$Model[which(labl_mods$Model == "FIRSTDIFF")] <- "DIFFERENCE"
   
-  cont_over = ggplot(data = indcont[-which(indcont$model %in% models[c(3,4)]),],aes(x = Year,y = Index,group = model))+
+  cont_over = ggplot(data = indcont,aes(x = Year,y = Index,group = model))+
     theme_classic()+
     theme(legend.position = "none")+
-    labs(title = species)+
     xlab(label = "")+
     ylab(label = "Predicted mean count")+
     geom_point(aes(x = Year,y = obs_mean),colour = grey(0.8),size = 0.8)+
     coord_cartesian(ylim = c(0,uylim))+
     scale_x_continuous(breaks = seq(1970,2020,by = 10),expand = c(0,0))+
     scale_y_continuous(expand = c(0,0))+
-    #geom_text_repel(data = labl_mods[4,],aes(x = Year,y = Index,label = Model,colour = model), nudge_y = 0.075*uylim, nudge_x = 5)+
-    geom_text_repel(data = labl_obs,aes(x = Year,y = obs_mean,label = label),colour = grey(0.7),inherit.aes = F, nudge_y = -0.1*uylim, nudge_x = 5)+
-    geom_text_repel(data = labl_mods[c(1:2,4),],aes(x = Year,y = Index,label = Model,colour = model), nudge_y = 0.075*uylim, nudge_x = 5)+
+    annotate(geom = "text",x = 1985,y = uylim*0.05,label = "Routes/50",colour = grey(0.6)) +
+    geom_text_repel(data = labl_obs,aes(x = Year,y = obs_mean,label = label),colour = grey(0.5),inherit.aes = F, nudge_y = -0.1*uylim, nudge_x = 5)+
+    geom_text_repel(data = labl_mods,aes(x = Year,y = Index,label = Model,colour = model), nudge_y = 0.075*uylim, nudge_x = 5)+
     scale_colour_manual(values = model_pallete, aesthetics = c("colour","fill"))+
-    geom_ribbon(data = indcont[which(indcont$model %in% models[c(4)]),],aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975,fill = model),alpha = 0.2)+
-    geom_line(data = indcont[which(indcont$model %in% models[c(4)]),],aes(x = Year,y = Index,colour = model),size = 1.2)+
     
     geom_ribbon(aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975,fill = model),alpha = 0.2)+
     geom_line(aes(colour = model),size = 1.2)+
-    geom_dotplot(data = dattc,mapping = aes(x = Year),drop = T,binaxis = "x", stackdir = "up",method = "histodot",binwidth = 1,width = 0.2,inherit.aes = F,fill = grey(0.6),colour = grey(0.6),alpha = 0.2,dotsize = 0.3)
+    geom_dotplot(data = dattc,mapping = aes(x = Year),drop = T,binaxis = "x", stackdir = "up",method = "histodot",binwidth = 1,width = 0.2,inherit.aes = F,fill = grey(0.6),colour = grey(0.6),alpha = 0.2,dotsize = 0.5)
+  
   print(cont_over)
   
   svplots[[species]] <- cont_over
   
 }
 
-  dev.off()
-  
+dev.off()
+
 save(list = "svplots",file = "Figures/supplement/Fig 1 all species.RData")
-
-
 
 
 
@@ -378,24 +451,24 @@ for(s in 1:dim(betaxmat)[2]){
 strati$strat = factor(strati$strat)
 
 
-labls = conti[which(conti$year == 1980),]
+labls = conti[which(conti$year == 1985),]
 labls$labl = "Survey-wide mean trajectory"
 
 betaplot = ggplot(data = conti,aes(x = year,y = med))+
   theme_classic()+
   labs(title = "")+#paste0(species," GAM components including hyperparameter"))+
-  ylab("Population change based on GAM smooth (linear scale)")+
+  ylab("Trajectory from GAM smooth (linear scale)")+
   theme(legend.position = "none")+
   geom_line(data = strati,aes(x = year, y = med,group = strat),alpha = 0.075)+
-  geom_text_repel(data = labls,aes(x = year,y = med,label = labl),nudge_x = 5,nudge_y = -0.75)+
+  geom_text_repel(data = labls,aes(x = year,y = med,label = labl),nudge_x = 5,nudge_y = -0.85)+
   coord_cartesian(ylim = c(0,max(conti$med)*2))+
   scale_y_continuous(expand = c(0,0))+
   scale_x_continuous(expand = c(0,0))+
   geom_line(colour = grey(0.2),size = 1.4)
 
 pdf(file = paste0("Figures/Fig 2.pdf"),
-    width = 5,
-    height = 4)
+    width = 3.5,
+    height = 3)
 print(betaplot)
 dev.off()
 
@@ -556,9 +629,16 @@ indsel2 = indsel[which(indsel$Region == "US-IL-23"),]
 labl_obs = unique(indsel2[which(indsel2$Year == 2000 & indsel2$model == "gamye"),c("Year","obs_mean","Region")])
 labl_obs$label = "Observed mean counts"
 
-mxy = tapply(indsel2[which(indsel2$Year %in% c(1970:2000)),"Index"],indsel2[which(indsel2$Year %in% c(1970:2000)),"model"],max)
+mxy = tapply(indsel2[which(indsel2$Year %in% c(1970:2006)),"Index"],indsel2[which(indsel2$Year %in% c(1970:2006)),"model"],max)
 
-labl_mods = indsel2[which(indsel2$Index %in% mxy),]
+wmxy = which(indsel2$Index %in% mxy)
+
+names(wmxy) <- indsel2[wmxy,"model"]
+wmxy["slope"] <- which(indsel2$Year == 1990 & indsel2$model == "slope")
+
+labl_mods = indsel2[wmxy,]
+
+
 labl_mods$Model = toupper(labl_mods$model)
 labl_mods$Model[which(labl_mods$Model == "FIRSTDIFF")] <- "DIFFERENCE"
 
@@ -570,7 +650,7 @@ datt$Region = datt$Stratum
 
 
 
-cont_over = ggplot(data = indsel[-which(indsel$model %in% models[c(2,3)]),],aes(x = Year,y = Index,group = model))+
+cont_over = ggplot(data = indsel[-which(indsel$model %in% models[c(2)]),],aes(x = Year,y = Index,group = model))+
   theme_classic()+
   theme(legend.position = "none")+
   xlab(label = "")+
@@ -578,15 +658,16 @@ cont_over = ggplot(data = indsel[-which(indsel$model %in% models[c(2,3)]),],aes(
   geom_point(aes(x = Year,y = obs_mean),colour = grey(0.8),size = 0.8)+
   scale_x_continuous(breaks = seq(1970,2020,by = 10),expand = c(0,0))+
   scale_y_continuous(expand = c(0,0))+
-  geom_text_repel(data = labl_mods[4,],aes(x = Year,y = Index,label = Model),colour = grey(0.5), nudge_y = -10, nudge_x = -5)+
+  geom_ribbon(aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975,fill = model),alpha = 0.2)+
+  geom_line(aes(colour = model),size = 1.2)+
+  geom_text_repel(data = labl_mods[c(3,4),],aes(x = Year,y = Index,label = Model,colour = model), nudge_y = -10, nudge_x = -5)+
+ # geom_text_repel(data = labl_mods[3,],aes(x = Year,y = Index,label = Model),colour = grey(0.5), nudge_y = -10, nudge_x = -5)+
   geom_text_repel(data = labl_obs,aes(x = Year,y = obs_mean,label = label,group = Region),colour = grey(0.5),inherit.aes = F, nudge_y = -5, nudge_x = 1)+
   geom_text_repel(data = labl_mods[1,],aes(x = Year,y = Index,label = Model,colour = model), nudge_y = 15, nudge_x = 2)+
   scale_colour_manual(values = model_pallete, aesthetics = c("colour","fill"))+
   #geom_ribbon(data = indsel[which(indsel$model %in% models[c(4)]),],aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975),fill = grey(0.5),alpha = 0.2)+
   #geom_line(data = indsel[which(indsel$model %in% models[c(4)]),],aes(x = Year,y = Index),colour = grey(0.7),size = 1.2)+
-  geom_ribbon(aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975,fill = model),alpha = 0.2)+
-  geom_line(aes(colour = model),size = 1.2)+
-  geom_dotplot(data = datt,mapping = aes(x = Year),drop = T,binaxis = "x", 
+ geom_dotplot(data = datt,mapping = aes(x = Year),drop = T,binaxis = "x", 
                stackdir = "up",method = "histodot",binwidth = 1,width = 0.2,inherit.aes = F,fill = grey(0.6),colour = grey(0.6),alpha = 0.2,dotsize = 0.5)+
   facet_wrap(facets = ~Region,nrow = 2,ncol = 3, scales = "free")
   
@@ -594,7 +675,7 @@ cont_over = ggplot(data = indsel[-which(indsel$model %in% models[c(2,3)]),],aes(
 
 
 pdf(file = paste0("Figures/Fig 3.pdf"),
-    width = 8.5,
+    width = 7,
     height = 6)
 print(cont_over)
 dev.off()
@@ -603,9 +684,105 @@ dev.off()
 
 
 
+# Figure 4 --------------------------------------------------------------
+
+species = "Cooper's Hawk"
+
+sp_dir = paste0("output/",species,"/")
+
+load(paste0(sp_dir,"saved objects.RData"))
+
+inds = tosave$indsout
+
+tr = tosave$trendsout
+
+trS = filter(tr,Region_type == "stratum")
+trS$Model = toupper(trS$model)
+trS$Model[which(trS$Model == "FIRSTDIFF")] <- "DIFFERENCE"
+
+trS$abs_Trend = abs(trS$Trend)
+#trS$log_Number_Routes = log(trS$Mean_Number_of_Routes,base = 10)
+#trS$log_Number_Routes = log(trS$Relative_Abundance*trS$Mean_Number_of_Routes,base = 10)
+
+#trS$data_cat = cut(trS$log_Number_Routes,breaks = c(0,1,2,3,4,5))
+trpl = ggplot(data = trS,aes(x = Mean_Number_of_Routes,y = abs_Trend,colour = model))+
+  geom_point()+
+  theme_classic()+
+  theme(legend.position = "none",
+        legend.text = element_text(size = 6))+
+  ylab("Absolute value of long-term trend (%/year)")+
+  xlab("Mean number of routes in the stratum/year")+
+  scale_x_continuous(trans = "log", breaks = (c(1,3,10,25,50)))+
+  scale_y_continuous(limits = c(0,NA),expand = c(0,0))+
+  facet_wrap(facets = ~Model,nrow = 2)+
+  #geom_smooth(method = "lm")+
+  scale_colour_manual(values = model_pallete, aesthetics = c("colour","fill"))
+  
+
+# trpl2 = ggplot(data = trS,aes(x = data_cat,y = abs_Trend,colour = model))+
+#   geom_boxplot()+
+#   facet_wrap(facets = ~model,nrow = 2)
+pdf(paste0("figures/Fig 4.pdf"),
+    width = 7,
+    height = 5)
+print(trpl)
+dev.off()
 
 
-# Figure 4 ----------------------------------------------------------------
+# species versions of Figure 4 --------------------------------------------------------------
+svplots = list()
+length(svplots) = length(demo_sp)
+names(svplots) = demo_sp
+
+
+pdf(file = paste0("Figures/supplement/Fig 4 all species.pdf"),
+    width = 5,
+    height = 4)
+
+for(species in demo_sp){
+
+sp_dir = paste0("output/",species,"/")
+
+load(paste0(sp_dir,"saved objects.RData"))
+
+inds = tosave$indsout
+
+tr = tosave$trendsout
+
+trS = filter(tr,Region_type == "stratum")
+trS$Model = toupper(trS$model)
+trS$Model[which(trS$Model == "FIRSTDIFF")] <- "DIFFERENCE"
+
+trS$abs_Trend = abs(trS$Trend)
+trS$log_Number_Routes = log(trS$Mean_Number_of_Routes,base = 10)
+#trS$log_Number_Routes = log(trS$Relative_Abundance*trS$Mean_Number_of_Routes,base = 10)
+
+#trS$data_cat = cut(trS$log_Number_Routes,breaks = c(0,1,2,3,4,5))
+trpl = ggplot(data = trS,aes(x = Mean_Number_of_Routes,y = abs_Trend,colour = model))+
+  geom_point()+
+  theme_classic()+
+  theme(legend.position = "none",
+        legend.text = element_text(size = 6))+
+  ylab("Absolute value of long-term trend (%/year)")+
+  xlab("Mean number of routes in the stratum/year")+
+  scale_x_continuous(trans = "log", breaks = (c(1,3,10,25,50)))+
+  scale_y_continuous(limits = c(0,NA),expand = c(0,0))+
+  facet_wrap(facets = ~Model,nrow = 2)+
+  #geom_smooth(method = "lm")+
+  scale_colour_manual(values = model_pallete, aesthetics = c("colour","fill"))
+
+
+print(trpl)
+svplots[[species]] <- trpl
+
+}
+
+dev.off()
+
+save(list = "svplots",file = "Figures/supplement/Fig 4 all species.RData")
+
+
+# Figure 5 ----------------------------------------------------------------
 
 
 
@@ -646,7 +823,7 @@ dif_mod_year_over_out$M2 = paste("Favours",smod(dif_mod_year_over_out$Contrast_f
 
 
 
-dif_mod_year_over_out2 = filter(dif_mod_year_over_out,Contrast_full_name %in% c("GAMYE vs SLOPE","GAMYE vs GAM","GAMYE vs DIFFERENCE"))#,"GAMYE vs DIFFERENCE"))
+dif_mod_year_over_out2 = filter(dif_mod_year_over_out,Contrast_full_name %in% c("GAMYE vs SLOPE","GAMYE vs GAM","GAMYE vs DIFFERENCE"))#,"GAM vs DIFFERENCE"))#,"GAMYE vs DIFFERENCE"))
 
 
 dif_mod_year_over_out2$Contrast_full_name = factor(dif_mod_year_over_out2$Contrast_full_name)
@@ -657,7 +834,7 @@ dif_mod_year_over_outsplab = filter(dif_mod_year_over_out2,Contrast_full_name %i
 
 dif_mod_labs = filter(dif_mod_year_over_out2,species == demo_sp[1])
 dif_mod_labs$M1loc = 0.02
-dif_mod_labs$M2loc = -0.015
+dif_mod_labs$M2loc = -0.02
 
 dif_mod_border = dif_mod_labs
 dif_mod_border$Contrast_full_name = as.integer(dif_mod_border$Contrast_full_name)-0.4
@@ -666,14 +843,17 @@ dif_mod_border$M2loc = dif_mod_border$M2loc-0.015
 
 # overall summary graphs --------------------------------------------------
 
-gl <- guide_legend("Species",reverse = T)
+gl <- guide_legend(title = "Species",reverse = T,
+                   nrow = 2,title.position = "top",
+                   label.hjust = 0)
 
 overall.comparison = ggplot(data = dif_mod_year_over_out2,aes(x = Contrast_full_name,y = mean,group = sp,colour = sp,fill = sp))+
   #coord_cartesian(ylim = c(-0.05,0.05))+
   theme_minimal()+
    theme(axis.text.y = element_blank(),
-         legend.position = "right",
+         legend.position = "bottom",
          legend.text = element_text(size = 6))+
+  #guide_legend(nrow = 2)+
   #labs(title = paste("Overall cross validation comparison"))+
   ylab("Mean difference in point-wise log-probability")+
   xlab("")+
@@ -686,7 +866,7 @@ overall.comparison = ggplot(data = dif_mod_year_over_out2,aes(x = Contrast_full_
   geom_linerange(inherit.aes = F,data = dif_mod_border,aes(x = Contrast_full_name,ymin = M2loc,ymax = M1loc),show.legend = F,colour = grey(0.5),size = 0.5)+
   scale_colour_manual(values = species_pallete, aesthetics = c("colour","fill"),name = "Species")+
   scale_shape_manual(values = pchs, name = "Species")+
-  scale_y_continuous(limits = c(-0.03,0.04))+ # annotate(geom = "text",x = 0.5,y = 0.005,label = "Favours first")+
+  scale_y_continuous(limits = c(-0.04,0.04))+ # annotate(geom = "text",x = 0.5,y = 0.005,label = "Favours first")+
   # geom_label_repel(data = dif_mod_year_over_outsplab,
   #                 aes(x = Contrast_full_name,y = mean,group = species,colour = species,
   #                     label = sp),position = position_dodge(width = 0.4),
@@ -701,8 +881,8 @@ overall.comparison = ggplot(data = dif_mod_year_over_out2,aes(x = Contrast_full_
   coord_flip()
 
 
-pdf(paste0("figures/Fig 4.pdf"),
-    width = 5,
+pdf(paste0("figures/Fig 5.pdf"),
+    width = 3.5,
     height = 5)
 print(overall.comparison)
 dev.off()
@@ -714,7 +894,7 @@ dev.off()
 
 
 
-# Expanded Figure 4 all models supplement ---------------------------------
+# model versions Figure 5 all models supplement ---------------------------------
 
 
 dif_mod_year_over_out2 = dif_mod_year_over_out
@@ -734,8 +914,6 @@ dif_mod_border = dif_mod_labs
 dif_mod_border$Contrast_full_name = as.integer(dif_mod_border$Contrast_full_name)-0.45
 dif_mod_border$M1loc = dif_mod_border$M1loc+0.01
 dif_mod_border$M2loc = dif_mod_border$M2loc-0.01
-
-# overall summary graphs --------------------------------------------------
 
 gl <- guide_legend("Species",reverse = T)
 
@@ -772,14 +950,14 @@ overall.comparison = ggplot(data = dif_mod_year_over_out2,aes(x = Contrast_full_
   coord_flip()
 
 
-pdf(paste0("figures/supplement/Fig 4 all models.pdf"),
+pdf(paste0("figures/supplement/Fig 5 all models.pdf"),
     width = 5,
     height = 7)
 print(overall.comparison)
 dev.off()
 
 
-save(list = "overall.comparison",file = "Figures/supplement/Fig 4 all models.RData")
+save(list = "overall.comparison",file = "Figures/supplement/Fig 5 all models.RData")
 
 
 
@@ -787,7 +965,7 @@ save(list = "overall.comparison",file = "Figures/supplement/Fig 4 all models.RDa
 
 #
 
-# Figure 5 ----------------------------------------------------------------
+# Figure 6 ----------------------------------------------------------------
 species = "Carolina Wren"
 model = "gamye"
 
@@ -796,7 +974,7 @@ sp_dir = paste0("output/",species,"/")
 load(paste0(sp_dir,model,"/jags_data.RData"))  
 
   load(paste0(sp_dir,model,"/jags_mod_full.RData")) 
-  indx2 = generate_regional_indices(jags_mod = jags_mod_full,
+  indx2 = generate_indices(jags_mod = jags_mod_full,
                                     jags_data = jags_data,
                                     #quantiles = qs,
                                     regions = c("continental"),
@@ -806,7 +984,7 @@ load(paste0(sp_dir,model,"/jags_data.RData"))
   
   load(paste0(sp_dir,model,"/parameter_model_run.RData"))  
   jags_mod_full = jags_mod_param
-  indx1 = generate_regional_indices(jags_mod = jags_mod_full,
+  indx1 = generate_indices(jags_mod = jags_mod_full,
                                     jags_data = jags_data,
                                     #quantiles = qs,
                                     regions = c("continental"),
@@ -840,9 +1018,9 @@ uylim = max(c(indcont$Index_q_0.975,indcont$obs_mean))
 labl_obs = unique(indcont[which(indcont$Year == 1970),c("Year","obs_mean")])
 labl_obs$label = "Observed mean counts"
 
-mxy = tapply(indcont[which(indcont$Year %in% c(1970:2013)),"Index"],indcont[which(indcont$Year %in% c(1970:2013)),"version"],max)
+mxy = which((indcont$Year == c(1992) & indcont$version == "Smooth Only")| (indcont$Year == c(2005) & indcont$version == "Including Year Effects"))
 
-labl_mods = indcont[which(indcont$Index %in% mxy),]
+labl_mods = indcont[mxy,]
 
 
 ncby_y = table(jags_data$r_year)
@@ -863,16 +1041,16 @@ cont_over = ggplot(data = indcont,aes(x = Year,y = Index,group = version))+
   scale_y_continuous(expand = c(0,0))+
   #geom_text_repel(data = labl_mods,aes(x = Year,y = Index,label = version),colour = grey(0.5), nudge_y = 0.075*uylim, nudge_x = 5)+
   geom_text_repel(data = labl_obs,aes(x = Year,y = obs_mean,label = label),colour = grey(0.5),inherit.aes = F, nudge_y = -0.1*uylim, nudge_x = 5)+
-  geom_text_repel(data = labl_mods,aes(x = Year,y = Index,label = version,colour = version), nudge_y = 0.075*uylim, nudge_x = 5)+
+  geom_text_repel(data = labl_mods,aes(x = Year,y = Index,label = version,colour = version), nudge_y = 0.15*uylim, nudge_x = -5)+
   scale_colour_manual(values = colye, aesthetics = c("colour","fill"))+
 
   geom_ribbon(aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975,fill = version),alpha = 0.2)+
   geom_line(aes(colour = version),size = 1.2)+
   geom_dotplot(data = dattc,mapping = aes(x = Year),drop = T,binaxis = "x", stackdir = "up",method = "histodot",binwidth = 1,width = 0.2,inherit.aes = F,fill = grey(0.6),colour = grey(0.6),alpha = 0.2,dotsize = 0.3)
 
-pdf(file = paste0("Figures/Fig 5.pdf"),
-    width = 5,
-    height = 4)
+pdf(file = paste0("Figures/Fig 6.pdf"),
+    width = 3.5,
+    height = 3)
 print(cont_over)
 dev.off()
 
@@ -888,7 +1066,7 @@ svplots = list()
 length(svplots) = length(demo_sp)
 names(svplots) = demo_sp
 
-pdf(file = paste0("Figures/supplement/Fig 5 all species.pdf"),
+pdf(file = paste0("Figures/supplement/Fig 6 all species.pdf"),
     width = 5,
     height = 4)
 
@@ -900,7 +1078,7 @@ sp_dir = paste0("output/",species,"/")
 load(paste0(sp_dir,model,"/jags_data.RData"))  
 
 load(paste0(sp_dir,model,"/jags_mod_full.RData")) 
-indx2 = generate_regional_indices(jags_mod = jags_mod_full,
+indx2 = generate_indices(jags_mod = jags_mod_full,
                                   jags_data = jags_data,
                                   #quantiles = qs,
                                   regions = c("continental"),
@@ -910,7 +1088,7 @@ indx2 = generate_regional_indices(jags_mod = jags_mod_full,
 
 load(paste0(sp_dir,model,"/parameter_model_run.RData"))  
 jags_mod_full = jags_mod_param
-indx1 = generate_regional_indices(jags_mod = jags_mod_full,
+indx1 = generate_indices(jags_mod = jags_mod_full,
                                   jags_data = jags_data,
                                   #quantiles = qs,
                                   regions = c("continental"),
@@ -982,7 +1160,7 @@ svplots[[species]] <- cont_over
 
 dev.off()
 
-save(list = "svplots",file = "Figures/supplement/Fig 5 all species.RData")
+save(list = "svplots",file = "Figures/supplement/Fig 6 all species.RData")
 
 
 
@@ -1006,7 +1184,7 @@ save(list = "svplots",file = "Figures/supplement/Fig 5 all species.RData")
 
 
 
-# Figure 6 ----------------------------------------------------------------
+# Figure 7 ----------------------------------------------------------------
 
 
 
@@ -1020,7 +1198,7 @@ for(species in demo_sp){
   load(paste0(sp_dir,model,"/jags_data.RData"))  
   
   load(paste0(sp_dir,model,"/jags_mod_full.RData")) 
-  indx = generate_regional_indices(jags_mod = jags_mod_full,
+  indx = generate_indices(jags_mod = jags_mod_full,
                                    jags_data = jags_data,
                                    #quantiles = qs,
                                    regions = c("continental"),
@@ -1034,11 +1212,11 @@ for(species in demo_sp){
   
   for(y in (fy+short_time):YYYY){
     if(y == fy+short_time){
-      tmp = generate_regional_trends(indx,
+      tmp = generate_trends(indx,
                                      Min_year = y-short_time,
                                      Max_year = y)
     }else{
-      tmp2 = generate_regional_trends(indx,
+      tmp2 = generate_trends(indx,
                                       Min_year = y-short_time,
                                       Max_year = y)
       tmp = rbind(tmp,tmp2)
@@ -1052,7 +1230,7 @@ for(species in demo_sp){
   
   load(paste0(sp_dir,model,"/parameter_model_run.RData"))  
   jags_mod_full = jags_mod_param
-  indx = generate_regional_indices(jags_mod = jags_mod_full,
+  indx = generate_indices(jags_mod = jags_mod_full,
                                    jags_data = jags_data,
                                    #quantiles = qs,
                                    regions = c("continental"),
@@ -1063,7 +1241,7 @@ for(species in demo_sp){
   
   for(y in (fy+short_time):YYYY){
     
-    tmp2 = generate_regional_trends(indx,
+    tmp2 = generate_trends(indx,
                                     Min_year = y-short_time,
                                     Max_year = y)
     tmp2$model = "gamye_alt"
@@ -1079,7 +1257,7 @@ for(species in demo_sp){
     load(paste0(sp_dir,model,"/jags_data.RData"))  
     
     load(paste0(sp_dir,model,"/jags_mod_full.RData")) 
-    indx = generate_regional_indices(jags_mod = jags_mod_full,
+    indx = generate_indices(jags_mod = jags_mod_full,
                                      jags_data = jags_data,
                                      #quantiles = qs,
                                      regions = c("continental"),
@@ -1088,7 +1266,7 @@ for(species in demo_sp){
     
     for(y in (fy+short_time):YYYY){
       
-      tmp2 = generate_regional_trends(indx,
+      tmp2 = generate_trends(indx,
                                       Min_year = y-short_time,
                                       Max_year = y)
       tmp2$model = model
@@ -1124,6 +1302,9 @@ modnames = data.frame(model = c("gamye",
 modnames$version = factor(modnames$version,ordered = T,levels = modnames$version[c(5,2,3,4,1)])
 trends = merge(tmpout,modnames,by = "model")
 
+trends = trends[order(trends$species,trends$version,trends$End_year),]
+
+
 mean_abs_dif <- function(x){
   mean(abs(diff(x)))
 }
@@ -1134,10 +1315,14 @@ sd_abs_dif <- function(x){
 
 trend_difs <- trends %>% filter(species %in% c("Carolina Wren","Pine Siskin")) %>% group_by(version,species) %>% summarise(m_dif = mean_abs_dif(Trend),
                                                                                                                            sd_dif = sd_abs_dif(Trend))
+ # trend_difs <- trends %>% group_by(species,version) %>% summarise(m_dif = mean_abs_dif(Trend),
+#                                                                                                                            sd_dif = sd_abs_dif(Trend))
+# trends2 <- trends %>% filter(species %in% c("Carolina Wren","Pine Siskin"))
+# tt = ggplot(data = trends2,aes(x = End_year,y = Trend,colour = species))+
+#   geom_point()+geom_line()+facet_wrap(facets = ~version)
+# print(tt)
 
-
-
-trend_difs <- arrange(trend_difs,species,m_dif)
+#trend_difs <- arrange(trend_difs,species,m_dif)
 
 coltrends = c(model_pallete,viridis::viridis(7)[6] )
 names(coltrends) <- modnames$version
@@ -1145,27 +1330,30 @@ coltrends <- coltrends[c(2,5,3,4,1)]
 
 lbls = filter(trend_difs,species == "Carolina Wren")
 lbls$xx = 0.65+(as.integer(lbls$version)-1)*0.18
+# lbls[which(lbls$version == "GAMYE − Including Year Effects"),"xx"] = lbls[which(lbls$version == "GAMYE − Including Year Effects"),"xx"]+0.2
 
 trenddif = ggplot(data = trend_difs,aes(x = species,y = m_dif,colour = version,fill = version,group = version))+
   geom_bar(position = "dodge",stat = "identity")+
   scale_colour_manual(name = "",
                       values = coltrends, aesthetics = c("colour","fill"))+
+  scale_y_continuous(limits = c(0,7)) +
   xlab("")+
   ylab("Mean absolute change in annual 10-year trends")+
-  coord_flip()+
   theme_classic()+
-  theme(legend.position = "none")+
-  geom_text_repel(data = lbls,aes(x = xx,y = m_dif, label = version),nudge_y = 2)
+  theme(legend.position = "none",
+        axis.text.y = element_text(angle = 90,hjust = 0.5),
+        axis.title.x = element_text(size = 9))+
+  coord_flip()+
+  geom_text_repel(data = lbls,aes(x = xx,y = m_dif, label = version),nudge_y = 3,size = 3)
 
 
 
-pdf(file = paste0("Figures/Fig 6.pdf"),
-    width = 5,
-    height = 3)
+pdf(file = paste0("Figures/Fig 7.pdf"),
+    width = 3.5,
+    height = 2.5)
 print(trenddif)
 dev.off()
 
-#save(list = "trenddif",file = "Figures/supplement/Fig alt.RData")
 
 
 
@@ -1173,7 +1361,7 @@ dev.off()
 
 
 
-# Figure 7 ----------------------------------------------------------------
+# Figure 8 ----------------------------------------------------------------
 
 
 
@@ -1188,13 +1376,13 @@ load(paste0(sp_dir,model,"/jags_mod_full.RData"))
 load(paste0(sp_dir,model,"/parameter_model_run.RData"))  
 
 
-inds_gamye <- generate_regional_indices(jags_mod = jags_mod_full,
+inds_gamye <- generate_indices(jags_mod = jags_mod_full,
                                         jags_data = jags_data,
                                         regions = c("national"),
                                         max_backcast = NULL,
                                         alternate_n = "n") 
 
-inds_gamnoye <- generate_regional_indices(jags_mod = jags_mod_param,
+inds_gamnoye <- generate_indices(jags_mod = jags_mod_param,
                                           jags_data = jags_data,
                                           regions = c("national"),
                                           max_backcast = NULL,
@@ -1203,11 +1391,21 @@ inds_gamnoye <- generate_regional_indices(jags_mod = jags_mod_param,
 
 load(paste0(sp_dir,"slope/jags_mod_full.RData"))
 
-inds_slope <- generate_regional_indices(jags_mod = jags_mod_full,
+inds_slope <- generate_indices(jags_mod = jags_mod_full,
                                         jags_data = jags_data,
                                         regions = c("national"),
                                         max_backcast = NULL,
                                         alternate_n = "n") 
+
+
+
+load(paste0(sp_dir,"firstdiff/jags_mod_full.RData"))
+
+inds_firstdiff <- generate_indices(jags_mod = jags_mod_full,
+                               jags_data = jags_data,
+                               regions = c("national"),
+                               max_backcast = NULL,
+                               alternate_n = "n") 
 
 
 
@@ -1219,7 +1417,7 @@ rollTrend = "Trend"
 
 
 for(ly2 in c((fy+short_time):YYYY)){
-  trst_gamye = generate_regional_trends(indices = inds_gamye,
+  trst_gamye = generate_trends(indices = inds_gamye,
                                         Min_year = ly2-short_time,
                                         Max_year = ly2,
                                         #quantiles = qs,
@@ -1228,7 +1426,7 @@ for(ly2 in c((fy+short_time):YYYY)){
                                         prob_increase = c(0,33,100))
   trst_gamye$decomp <- "GAMYE - Including Year Effects"
   
-  trst_gamnoye = generate_regional_trends(indices = inds_gamnoye,
+  trst_gamnoye = generate_trends(indices = inds_gamnoye,
                                           Min_year = ly2-short_time,
                                           Max_year = ly2,
                                           #quantiles = qs,
@@ -1238,7 +1436,7 @@ for(ly2 in c((fy+short_time):YYYY)){
   trst_gamnoye$decomp <- "GAMYE - Smooth only"
   
   
-  trst_sl = generate_regional_trends(indices = inds_slope,
+  trst_sl = generate_trends(indices = inds_slope,
                                      Min_year = ly2-short_time,
                                      Max_year = ly2,
                                      #quantiles = qs,
@@ -1247,13 +1445,22 @@ for(ly2 in c((fy+short_time):YYYY)){
                                      prob_increase = c(0,33,100))
   trst_sl$decomp <- "SLOPE"
   
+  trst_firstdiff = generate_trends(indices = inds_firstdiff,
+                                     Min_year = ly2-short_time,
+                                     Max_year = ly2,
+                                     #quantiles = qs,
+                                     slope = F,
+                                     prob_decrease = c(0,25,30,50),
+                                     prob_increase = c(0,33,100))
+  trst_firstdiff$decomp <- "DIFFERENCE"
+  
   
   
   if(ly2 == fy+short_time){
-    tcos = rbind(trst_gamye,trst_gamnoye,trst_sl)
+    tcos = rbind(trst_gamye,trst_gamnoye,trst_sl,trst_firstdiff)
     
   }else{
-    tcos = rbind(tcos,trst_gamye,trst_gamnoye,trst_sl)
+    tcos = rbind(tcos,trst_gamye,trst_gamnoye,trst_sl,trst_firstdiff)
   }
   
 }
@@ -1275,7 +1482,7 @@ threshs = data.frame(thresh = c(thresh30,thresh50),
                      Year = rep(min(tcos$End_year),2))
 
 
-colye2 = c(colye,model_pallete["slope"] )
+colye2 = c(colye,model_pallete[c("slope","firstdiff")] )
 names(colye2) <- unique(tcos$decomp)
 
 
@@ -1286,7 +1493,8 @@ tmp = tcos[which(tcos$Region_alt == rg & tcos$End_year > 2000),]
 
 st_exc <- ""
 
-tmpend = tmp[which( (tmp$End_year == 2011 & tmp$decomp == "SLOPE") |
+tmpend = tmp[which( (tmp$End_year == 2011 & tmp$decomp == "DIFFERENCE") |
+                      (tmp$End_year == 2011 & tmp$decomp == "SLOPE") |
                       (tmp$End_year == 2014 & tmp$decomp == "GAMYE - Smooth only") |
                       (tmp$End_year == 2005 & tmp$decomp == "GAMYE - Including Year Effects")  ),]
 tmpend$lably = tmpend$rolt
@@ -1299,6 +1507,11 @@ tmpend[sl.v,"End_year"] <- tmpend[sl.v,"End_year"] +0.1
 sy.v <- which(tmpend$decomp == "GAMYE - Including Year Effects")
 tmpend[sy.v,"End_year"] <- tmpend[sy.v,"End_year"] - 0.15
 
+
+sd.v = which(tmpend$decomp == "DIFFERENCE")
+tmpend[sd.v,"End_year"] <- tmpend[sd.v,"End_year"]-0.2
+
+
 threshplot = data.frame(roltlci = c(rep(thresh30,2),rep(thresh50,2)),
                         roltuci = c(rep(thresh50,2),rep(-15,2)),
                         year = rep(c(1999,2019),2),
@@ -1310,7 +1523,7 @@ uylim = max(tmp$roltuci)+0.75
 cpt = ggplot(data = tmp,aes(x = End_year,y = rolt,group = decomp,colour = decomp))+
   theme_classic()+
   theme(legend.position = "none")+
-  xlab(paste0("Year of Status Assessment (End of ",short_time,"-year trend)"))+
+  xlab(paste0("Year of Assessment (End of ",short_time,"-year trend)"))+
   ylab(paste0(short_time,"-year trends"))+
   geom_hline(yintercept = thresh30,colour = c_orng,size = 1)+
   geom_hline(yintercept = thresh50,colour = c_red,size = 1)+
@@ -1318,166 +1531,25 @@ cpt = ggplot(data = tmp,aes(x = End_year,y = rolt,group = decomp,colour = decomp
   geom_ribbon(data = threshplot[1:2,],aes(x = year,ymin = roltlci,ymax = roltuci),fill = c_orng ,alpha = 0.1,inherit.aes = F)+
   geom_ribbon(data = threshplot[3:4,],aes(x = year,ymin = roltlci,ymax = roltuci),fill = c_red ,alpha = 0.1,inherit.aes = F)+
   geom_hline(yintercept = 0,colour = grey(0.7))+
-  annotate(geom = "text",x = 2005, label = "Threatened",y = threshs[1,"thresh"]-0.3,colour = c_orng,size = 4,alpha = 1)+
-  annotate(geom = "text",x = 2005, label = "Endangered", y = threshs[2,"thresh"]-0.3,colour = c_red,size = 4,alpha = 1)+
-  geom_linerange(aes(x = End_year,ymin = roltlci,ymax = roltuci),alpha = 0.4,size = 0.2,position = position_dodge(width = 0.4))+
+  annotate(geom = "text",x = 2002, label = "Threatened",y = threshs[1,"thresh"]-0.275,colour = c_orng,size = 3,alpha = 1)+
+  annotate(geom = "text",x = 2002, label = "Endangered", y = threshs[2,"thresh"]-0.28,colour = c_red,size = 3,alpha = 1)+
+  geom_linerange(aes(x = End_year,ymin = roltlci,ymax = roltuci),alpha = 0.15,size = 0.2,position = position_dodge(width = 0.4))+
   geom_point(aes(x = End_year,y = rolt),size = 0.8,position = position_dodge(width = 0.4))+
   geom_line(aes(x = End_year,y = rolt),size = 0.2,position = position_dodge(width = 0.4),alpha = 0.4)+
-  geom_text_repel(data = tmpend[sy.v,],inherit.aes = F,aes(x = End_year,y = lably, label = decomp,colour = decomp),nudge_x = -0.5,nudge_y = +2)+
-  geom_text_repel(data = tmpend[sl.v,],inherit.aes = F,aes(x = End_year,y = lably, label = decomp,colour = decomp),nudge_x = 2,nudge_y = -1)+
-  geom_text_repel(data = tmpend[sm.v,],inherit.aes = F,aes(x = End_year,y = lably, label = decomp,colour = decomp),nudge_y = 4,nudge_x = +1.5)+
+  geom_text_repel(data = tmpend[sy.v,],inherit.aes = F,aes(x = End_year,y = lably, label = decomp,colour = decomp),nudge_x = -0.5,nudge_y = +2,size = 4)+
+  geom_text_repel(data = tmpend[sl.v,],inherit.aes = F,aes(x = End_year,y = lably, label = decomp,colour = decomp),nudge_x = 2,nudge_y = -1,size = 4)+
+  geom_text_repel(data = tmpend[sm.v,],inherit.aes = F,aes(x = End_year,y = lably, label = decomp,colour = decomp),nudge_y = 3,nudge_x = +1.5,size = 4)+
+  geom_text_repel(data = tmpend[sd.v,],inherit.aes = F,aes(x = End_year,y = lably, label = decomp,colour = decomp),nudge_x = -4,nudge_y = -1.7,size = 4)+
   scale_colour_manual(values = colye2, aesthetics = c("colour","fill"))
 
 
 
 ## update the theme?
-pdf(paste0(paste0("Figures/Fig 7.pdf")),
-    width = 5,
-    height = 4)
+pdf(paste0(paste0("Figures/Fig 8.pdf")),
+    width = 3.5,
+    height = 3)
 print(cpt)
 dev.off()
-
-
-
-
-
-
-# Figure 8 ----------------------------------------------------------------
-
-species = "Barn Swallow"
-
-sp_dir = paste0("output/",species,"/")
-
-load(paste0(sp_dir,"saved objects.RData"))
-
-inds = tosave$indsout
-
-
-datt = tosave$datt
-ncby_y = table(datt$Year)
-ncby_y = round(ncby_y/50)
-
-dattc = data.frame(Year = rep(as.integer(names(ncby_y)),times = ncby_y))
-
-indcont = inds[which(inds$Region == "Continental"),]  
-
-indcont2 = indcont[which(indcont$model == "slope"),]
-
-uylim = max(c(indcont$Index_q_0.975,indcont$obs_mean))
-
-labl_obs = unique(indcont[which(indcont$Year == 1970),c("Year","obs_mean")])
-labl_obs$label = "Observed mean counts"
-
-# mxy = tapply(indcont[which(indcont$Year %in% c(1970:2013)),"Index"],indcont[which(indcont$Year %in% c(1970:2013)),"model"],max)
-
-ww = which((indcont$model == "slope" & indcont$Year == 1970) |
-             (indcont$model == "gamye" & indcont$Year == 1980) |
-             (indcont$model == "gam" & indcont$Year == 1989) |
-             (indcont$model == "firstdiff" & indcont$Year == 1983))
-  
-
-labl_mods = indcont[ww,]
-labl_mods$Model = toupper(labl_mods$model)
-labl_mods$Model[which(labl_mods$Model == "FIRSTDIFF")] <- "DIFFERENCE"
-
-cont_over = ggplot(data = indcont,aes(x = Year,y = Index,group = model))+
-  theme_classic()+
-  theme(legend.position = "none")+
-  xlab(label = "")+
-  ylab(label = "Predicted mean count")+
-  geom_point(aes(x = Year,y = obs_mean),colour = grey(0.8),size = 0.8)+
-  coord_cartesian(ylim = c(0,uylim))+
-  scale_x_continuous(breaks = seq(1970,2020,by = 10),expand = c(0,0))+
-  scale_y_continuous(expand = c(0,0))+
-   geom_text_repel(data = labl_obs,aes(x = Year,y = obs_mean,label = label),colour = grey(0.5),inherit.aes = F, nudge_y = -0.1*uylim, nudge_x = 5)+
-  geom_text_repel(data = labl_mods,aes(x = Year,y = Index,label = Model,colour = model), nudge_y = 0.075*uylim, nudge_x = 5)+
-  scale_colour_manual(values = model_pallete, aesthetics = c("colour","fill"))+
-
-  geom_ribbon(aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975,fill = model),alpha = 0.2)+
-  geom_line(aes(colour = model),size = 1.2)+
-  geom_dotplot(data = dattc,mapping = aes(x = Year),drop = T,binaxis = "x", stackdir = "up",method = "histodot",binwidth = 1,width = 0.2,inherit.aes = F,fill = grey(0.6),colour = grey(0.6),alpha = 0.2,dotsize = 0.3)
-
-pdf(file = paste0("Figures/Fig 8.pdf"),
-    width = 5,
-    height = 4)
-print(cont_over)
-dev.off()
-
-
-# species versions for supplement ------------------------------------------
-
-svplots = list()
-length(svplots) = length(demo_sp)
-names(svplots) = demo_sp
-
-
-pdf(file = paste0("Figures/supplement/Fig 8 all species.pdf"),
-    width = 5,
-    height = 4)
-
-for(species in demo_sp){
-  
-  
-sp_dir = paste0("output/",species,"/")
-
-load(paste0(sp_dir,"saved objects.RData"))
-
-inds = tosave$indsout
-
-
-datt = tosave$datt
-ncby_y = table(datt$Year)
-ncby_y = round(ncby_y/50)
-
-dattc = data.frame(Year = rep(as.integer(names(ncby_y)),times = ncby_y))
-
-indcont = inds[which(inds$Region == "Continental"),]  
-
-indcont2 = indcont[which(indcont$model == "slope"),]
-
-uylim = min(c(max(c(indcont$Index_q_0.975,indcont$obs_mean)),max(indcont$Index * 3)))
-
-labl_obs = unique(indcont[which(indcont$Year == 1970),c("Year","obs_mean")])
-labl_obs$label = "Observed mean counts"
-
-# 
-mxy = tapply(indcont[which(indcont$Year %in% c(1970:2013)),"Index"],indcont[which(indcont$Year %in% c(1970:2013)),"model"],max)
-
-ww = which(indcont$Index %in% mxy)
-
-
-labl_mods = indcont[ww,]
-labl_mods$Model = toupper(labl_mods$model)
-labl_mods$Model[which(labl_mods$Model == "FIRSTDIFF")] <- "DIFFERENCE"
-
-cont_over = ggplot(data = indcont,aes(x = Year,y = Index,group = model))+
-  theme_classic()+
-  theme(legend.position = "none")+
-  xlab(label = "")+
-  ylab(label = "Predicted mean count")+
-  labs(title = species)+
-  geom_point(aes(x = Year,y = obs_mean),colour = grey(0.8),size = 0.8)+
-  coord_cartesian(ylim = c(0,uylim))+
-  scale_x_continuous(breaks = seq(1970,2020,by = 10),expand = c(0,0))+
-  scale_y_continuous(expand = c(0,0))+
-  geom_text_repel(data = labl_obs,aes(x = Year,y = obs_mean,label = label),colour = grey(0.5),inherit.aes = F, nudge_y = -0.1*uylim, nudge_x = 5)+
-  geom_text_repel(data = labl_mods,aes(x = Year,y = Index,label = Model,colour = model), nudge_y = 0.075*uylim, nudge_x = runif(1,-3,3))+
-  scale_colour_manual(values = model_pallete, aesthetics = c("colour","fill"))+
-  
-  geom_ribbon(aes(x = Year,ymin = Index_q_0.025,ymax = Index_q_0.975,fill = model),alpha = 0.15)+
-  geom_line(aes(colour = model),size = 1.2)+
-  geom_dotplot(data = dattc,mapping = aes(x = Year),drop = T,binaxis = "x", stackdir = "up",method = "histodot",binwidth = 1,width = 0.2,inherit.aes = F,fill = grey(0.6),colour = grey(0.6),alpha = 0.2,dotsize = 0.3)
-
-
-print(cont_over)
-
-svplots[[species]] <- cont_over
-
-}
-
-dev.off()
-
-save(list = "svplots",file = "Figures/supplement/Fig 8 all species.RData")
 
 
 
@@ -1541,17 +1613,18 @@ an_contr = ggplot(data = dif_mod_year,aes(x = Year,y = mean,group = Contrast_nam
   labs(title = "")+
   ylab("Mean difference in point-wise log-probability")+
   xlab("")+
+  coord_cartesian(ylim = c(-0.02,0.06))+
   scale_x_continuous(breaks = c(seq(1970,2010,by = 10),2018))+
   scale_colour_viridis_d(option = "C",end = 0.5)+
   geom_hline(yintercept = 0,colour = grey(0.2),alpha = 0.2)+
   geom_text_repel(data = lbl[1,],aes(x = Year,y = lci,label = Contrast_full_name),nudge_y = -0.005)+
-  geom_text_repel(data = lbl[2,],aes(x = Year,y = uci,label = Contrast_full_name),nudge_y = +0.005,nudge_x = 8)+
-  annotate(geom = "text",x = 2001,y = 0.04,label = "Positive favours GAMYE",size = 3.5,colour = grey(0.6))+
-  annotate(geom = "text",x = 2001,y = -0.012,label = "Negative favours alternate",size = 3.5,colour = grey(0.6))  
+  geom_text_repel(data = lbl[2,],aes(x = Year,y = uci,label = Contrast_full_name),nudge_y = +0.01,nudge_x = 13)+
+  annotate(geom = "text",x = 2001,y = 0.03,label = "Positive favours GAMYE",size = 3.5,colour = grey(0.6))+
+  annotate(geom = "text",x = 2001,y = -0.02,label = "Negative favours alternate",size = 3.5,colour = grey(0.6))  
 
 
 pdf(paste0("Figures/Fig 9.pdf"),
-    width = 5,
+    width = 3.5,
     height = 4)
 print(an_contr)
 dev.off()
@@ -1751,12 +1824,12 @@ for(i in c("A","B")){
 
       if(i == "B"){
       pdf(file = paste0("Figures/Fig 10",i,".pdf"),
-          width = 4,
-          height = 4)
+          width = 3.5,
+          height = 3.5)
       }else{
         pdf(file = paste0("Figures/Fig 10.pdf"),
-            width = 4,
-            height = 4)
+            width = 3.5,
+            height = 3.5)
       }
     
     
@@ -1771,8 +1844,50 @@ for(i in c("A","B")){
 
 
 
+# elpd Distribution demo for supplement --------------------------------------------------
 
-## supplmental figure compile
+
+
+
+species = "Barn Swallow"
+  
+  
+  sp_dir = paste0("output/",species,"/")
+  
+  loo.point = read.csv(paste0(sp_dir,"wide form lppd.csv"))
+  
+  
+  loo.point_stack <- pivot_longer(data = loo.point,cols = gamye_gam:firstdiff_slope,
+                                  names_to = "model_comparison",
+                                  values_to = "delta_elpd")
+  
+  contrast_full_names_df <- data.frame(model_comparison = names(contrast_full_names),
+                                       comp = contrast_full_names)
+  
+  
+  loo.point_stack <- left_join(loo.point_stack,contrast_full_names_df)
+  
+  qqout = ggplot(data = loo.point_stack,aes(sample = delta_elpd,group = comp))+
+    geom_qq()+
+    geom_qq_line()+
+    facet_wrap(~comp,nrow = 2, ncol = 3)+    
+   theme_minimal()+
+    theme(line = element_line(size = 0.4), rect = element_rect(size = 0.1),
+          axis.line = element_blank())
+    
+print(qqout)
+
+  
+  
+  
+
+
+
+
+
+# supplmental figure compile ----------------------------------------------
+
+
 
 load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 1 all species.RData")
 svplots1 = svplots
@@ -1780,16 +1895,16 @@ rm(svplots)
 load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 2 all species.RData")
 svplots2 = svplots
 rm(svplots)
-load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 4 all models.RData")
-load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 5 all species.RData")
+load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 4 all species.RData")
 svplots4 = svplots
 rm(svplots)
-load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 8 all species.RData")
-svplots5 = svplots
-rm(svplots)
+load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 5 all models.RData")
 
-load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 9 all species.RData")
+load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 6 all species.RData")
 svplots6 = svplots
+rm(svplots)
+load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 9 all species.RData")
+svplots9 = svplots
 rm(svplots)
 
 
@@ -1797,9 +1912,11 @@ save(list = c("svplots1",
               "svplots2",
               "overall.comparison",
               "svplots4",
-              "svplots5",
-              "svplots6"),
+              "svplots6",
+              "svplots9",
+              "qqout"),
      file = "figures/supplement/all_suppl_figures.RData")
+
 
 
 

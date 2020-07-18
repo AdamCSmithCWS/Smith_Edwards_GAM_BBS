@@ -1,5 +1,5 @@
 ---
-title: "Supplemental Material Figures S5 and S6, Smith and Edwards 2020, Improved  status and trend estimates from the North American Breeding Bird Survey using a Bayesian hierarchical generalized additive model"
+title: "Supplemental Material Figures S5 to S7, Smith and Edwards 2020, Improved  status and trend estimates from the North American Breeding Bird Survey using a Bayesian hierarchical generalized additive model"
 output: pdf_document
 ---
 
@@ -83,6 +83,15 @@ for(sp in species){
 
 }
 
+```
+
+
+```{r qqout, fig.cap = "Figure S7: Normal qq plots for the differences in elpd between model pairs for Barn Swallow, demonstrating the non-normal distribution and the heavy tails better estimated using a t-distribution",echo=FALSE}
+
+
+
+   print(qqout)
+ 
 ```
 
 
