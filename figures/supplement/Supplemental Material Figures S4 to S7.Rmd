@@ -1,0 +1,120 @@
+---
+title: "Supplemental Material Figures S4 to S7, Smith and Edwards 2020, Improved  status and trend estimates from the North American Breeding Bird Survey using a Bayesian hierarchical generalized additive model"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(captioner)
+
+```
+
+<!-- load figures and species -->
+
+```{r, echo = FALSE}
+
+load("c:/GAM_Paper_Script/figures/supplement/all_suppl_figures.RData")
+species <- names(svplots5)
+
+capt_s1 = captioner(prefix = "S",levels = 2,
+          auto_space = F,type = c("n","C"),infix = ".")
+
+capts <- vector(length = length(species))
+names(capts) <- species
+
+tmp <- capt_s1("qq")
+bump(capt_s1,level = 1)
+tmp2 <- capt_s1("qq3")
+bump(capt_s1,level = 1)
+tmp3 <- capt_s1("qq4")
+bump(capt_s1,level = 1)
+
+for (sp in species)
+{
+  capts[sp] <- capt_s1(name = paste0(sp),caption = paste0("Relationship between the absolute value of estimated long-term trends (1966-2018) and the amount of data in each stratum, from the four models compared here for ", sp, "."),
+          level = 2)
+
+}
+
+```
+
+```{r svplots5, fig.cap = capts,echo=FALSE}
+
+
+for(sp in species){
+   print(svplots5[[sp]])
+  cat("\n\n")
+
+}
+
+```
+
+
+
+
+
+```{r, echo = FALSE}
+
+bump(capt_s1,level = 1)
+
+capts <- vector(length = length(species))
+names(capts) <- species
+for (sp in species)
+{
+  capts[sp] <- capt_s1(name = paste0(sp,"six"),caption = paste0("Decomposition of the survey-wide population trajectory for ", sp, " from the GAMYE, showing the full trajectory (Including Year Effects) and the isolated smooth component (Smooth Only), which can be used to estimate population trends that are less sensitive to the particular year in which they are estimated. The stacked dots along the x axis indicate the approximate number of BBS counts used in the model; each dot represents 50 counts. "),
+          level = 2)
+
+}
+
+```
+
+```{r svplots6, fig.cap = capts,echo=FALSE}
+
+
+for(sp in species){
+   print(svplots6[[sp]])
+  cat("\n\n")
+
+}
+
+```
+
+
+```{r, echo = FALSE}
+
+bump(capt_s1,level = 1)
+
+capts <- vector(length = length(species))
+names(capts) <- species
+for (sp in species)
+{
+  capts[sp] <- capt_s1(name = paste0(sp,"nine"),caption = paste0("Annual differences in predictive fit between the GAMYE and SLOPE (blue) and the GAMYE and DIFFERENCE model (red) for ", sp),
+          level = 2)
+
+}
+
+```
+
+```{r svplots9, fig.cap = capts,echo=FALSE}
+
+
+for(sp in species){
+   print(svplots9[[sp]])
+  cat("\n\n")
+
+}
+
+```
+
+
+```{r qqout, fig.cap = "Figure S7: Normal qq plots for the differences in elpd between model pairs for Barn Swallow, demonstrating the non-normal distribution and the heavy tails better estimated using a t-distribution",echo=FALSE}
+
+
+
+   print(qqout)
+ 
+```
+
+

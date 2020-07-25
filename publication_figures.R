@@ -683,106 +683,7 @@ dev.off()
 
 
 
-
-# Figure 4 --------------------------------------------------------------
-
-species = "Cooper's Hawk"
-
-sp_dir = paste0("output/",species,"/")
-
-load(paste0(sp_dir,"saved objects.RData"))
-
-inds = tosave$indsout
-
-tr = tosave$trendsout
-
-trS = filter(tr,Region_type == "stratum")
-trS$Model = toupper(trS$model)
-trS$Model[which(trS$Model == "FIRSTDIFF")] <- "DIFFERENCE"
-
-trS$abs_Trend = abs(trS$Trend)
-#trS$log_Number_Routes = log(trS$Mean_Number_of_Routes,base = 10)
-#trS$log_Number_Routes = log(trS$Relative_Abundance*trS$Mean_Number_of_Routes,base = 10)
-
-#trS$data_cat = cut(trS$log_Number_Routes,breaks = c(0,1,2,3,4,5))
-trpl = ggplot(data = trS,aes(x = Mean_Number_of_Routes,y = abs_Trend,colour = model))+
-  geom_point()+
-  theme_classic()+
-  theme(legend.position = "none",
-        legend.text = element_text(size = 6))+
-  ylab("Absolute value of long-term trend (%/year)")+
-  xlab("Mean number of routes in the stratum/year")+
-  scale_x_continuous(trans = "log", breaks = (c(1,3,10,25,50)))+
-  scale_y_continuous(limits = c(0,NA),expand = c(0,0))+
-  facet_wrap(facets = ~Model,nrow = 2)+
-  #geom_smooth(method = "lm")+
-  scale_colour_manual(values = model_pallete, aesthetics = c("colour","fill"))
-  
-
-# trpl2 = ggplot(data = trS,aes(x = data_cat,y = abs_Trend,colour = model))+
-#   geom_boxplot()+
-#   facet_wrap(facets = ~model,nrow = 2)
-pdf(paste0("figures/Fig 4.pdf"),
-    width = 7,
-    height = 5)
-print(trpl)
-dev.off()
-
-
-# species versions of Figure 4 --------------------------------------------------------------
-svplots = list()
-length(svplots) = length(demo_sp)
-names(svplots) = demo_sp
-
-
-pdf(file = paste0("Figures/supplement/Fig 4 all species.pdf"),
-    width = 5,
-    height = 4)
-
-for(species in demo_sp){
-
-sp_dir = paste0("output/",species,"/")
-
-load(paste0(sp_dir,"saved objects.RData"))
-
-inds = tosave$indsout
-
-tr = tosave$trendsout
-
-trS = filter(tr,Region_type == "stratum")
-trS$Model = toupper(trS$model)
-trS$Model[which(trS$Model == "FIRSTDIFF")] <- "DIFFERENCE"
-
-trS$abs_Trend = abs(trS$Trend)
-trS$log_Number_Routes = log(trS$Mean_Number_of_Routes,base = 10)
-#trS$log_Number_Routes = log(trS$Relative_Abundance*trS$Mean_Number_of_Routes,base = 10)
-
-#trS$data_cat = cut(trS$log_Number_Routes,breaks = c(0,1,2,3,4,5))
-trpl = ggplot(data = trS,aes(x = Mean_Number_of_Routes,y = abs_Trend,colour = model))+
-  geom_point()+
-  theme_classic()+
-  theme(legend.position = "none",
-        legend.text = element_text(size = 6))+
-  ylab("Absolute value of long-term trend (%/year)")+
-  xlab("Mean number of routes in the stratum/year")+
-  scale_x_continuous(trans = "log", breaks = (c(1,3,10,25,50)))+
-  scale_y_continuous(limits = c(0,NA),expand = c(0,0))+
-  facet_wrap(facets = ~Model,nrow = 2)+
-  #geom_smooth(method = "lm")+
-  scale_colour_manual(values = model_pallete, aesthetics = c("colour","fill"))
-
-
-print(trpl)
-svplots[[species]] <- trpl
-
-}
-
-dev.off()
-
-save(list = "svplots",file = "Figures/supplement/Fig 4 all species.RData")
-
-
-# Figure 5 ----------------------------------------------------------------
+# Figure 4 ----------------------------------------------------------------
 
 
 
@@ -850,9 +751,9 @@ gl <- guide_legend(title = "Species",reverse = T,
 overall.comparison = ggplot(data = dif_mod_year_over_out2,aes(x = Contrast_full_name,y = mean,group = sp,colour = sp,fill = sp))+
   #coord_cartesian(ylim = c(-0.05,0.05))+
   theme_minimal()+
-   theme(axis.text.y = element_blank(),
-         legend.position = "bottom",
-         legend.text = element_text(size = 6))+
+  theme(axis.text.y = element_blank(),
+        legend.position = "bottom",
+        legend.text = element_text(size = 6))+
   #guide_legend(nrow = 2)+
   #labs(title = paste("Overall cross validation comparison"))+
   ylab("Mean difference in point-wise log-probability")+
@@ -874,14 +775,14 @@ overall.comparison = ggplot(data = dif_mod_year_over_out2,aes(x = Contrast_full_
   #                 ylim = c(-0.05,-0.01),
   #                 size = 3,
   #                 segment.alpha = 0.3)+
-
+  
   # annotate(geom = "text",x = 0.5,y = -0.005,label = "Favours second")+
   #scale_x_discrete(position = "top")+
   guides(colour = gl,fill = gl,shape = gl)+
   coord_flip()
 
 
-pdf(paste0("figures/Fig 5.pdf"),
+pdf(paste0("figures/Fig 4.pdf"),
     width = 3.5,
     height = 5)
 print(overall.comparison)
@@ -894,7 +795,7 @@ dev.off()
 
 
 
-# model versions Figure 5 all models supplement ---------------------------------
+# model versions Figure 4 all models supplement ---------------------------------
 
 
 dif_mod_year_over_out2 = dif_mod_year_over_out
@@ -946,19 +847,118 @@ overall.comparison = ggplot(data = dif_mod_year_over_out2,aes(x = Contrast_full_
   
   # annotate(geom = "text",x = 0.5,y = -0.005,label = "Favours second")+
   #scale_x_discrete(position = "top")+
-  guides(colour = gl,fill = gl,shape = gl)+
+guides(colour = gl,fill = gl,shape = gl)+
   coord_flip()
 
 
-pdf(paste0("figures/supplement/Fig 5 all models.pdf"),
+pdf(paste0("figures/supplement/Fig 4 all models.pdf"),
     width = 5,
     height = 7)
 print(overall.comparison)
 dev.off()
 
 
-save(list = "overall.comparison",file = "Figures/supplement/Fig 5 all models.RData")
+save(list = "overall.comparison",file = "Figures/supplement/Fig 4 all models.RData")
 
+
+
+
+# Figure 5 --------------------------------------------------------------
+
+species = "Cooper's Hawk"
+
+sp_dir = paste0("output/",species,"/")
+
+load(paste0(sp_dir,"saved objects.RData"))
+
+inds = tosave$indsout
+
+tr = tosave$trendsout
+
+trS = filter(tr,Region_type == "stratum")
+trS$Model = toupper(trS$model)
+trS$Model[which(trS$Model == "FIRSTDIFF")] <- "DIFFERENCE"
+
+trS$abs_Trend = abs(trS$Trend)
+#trS$log_Number_Routes = log(trS$Mean_Number_of_Routes,base = 10)
+#trS$log_Number_Routes = log(trS$Relative_Abundance*trS$Mean_Number_of_Routes,base = 10)
+
+#trS$data_cat = cut(trS$log_Number_Routes,breaks = c(0,1,2,3,4,5))
+trpl = ggplot(data = trS,aes(x = Mean_Number_of_Routes,y = abs_Trend,colour = model))+
+  geom_point()+
+  theme_classic()+
+  theme(legend.position = "none",
+        legend.text = element_text(size = 6))+
+  ylab("Absolute value of long-term trend (%/year)")+
+  xlab("Mean number of routes in the stratum/year")+
+  scale_x_continuous(trans = "log", breaks = (c(1,3,10,25,50)))+
+  scale_y_continuous(limits = c(0,NA),expand = c(0,0))+
+  facet_wrap(facets = ~Model,nrow = 2)+
+  #geom_smooth(method = "lm")+
+  scale_colour_manual(values = model_pallete, aesthetics = c("colour","fill"))
+  
+
+# trpl2 = ggplot(data = trS,aes(x = data_cat,y = abs_Trend,colour = model))+
+#   geom_boxplot()+
+#   facet_wrap(facets = ~model,nrow = 2)
+pdf(paste0("figures/Fig 5.pdf"),
+    width = 7,
+    height = 5)
+print(trpl)
+dev.off()
+
+
+# species versions of Figure 5 --------------------------------------------------------------
+svplots = list()
+length(svplots) = length(demo_sp)
+names(svplots) = demo_sp
+
+
+pdf(file = paste0("Figures/supplement/Fig 5 all species.pdf"),
+    width = 5,
+    height = 4)
+
+for(species in demo_sp){
+
+sp_dir = paste0("output/",species,"/")
+
+load(paste0(sp_dir,"saved objects.RData"))
+
+inds = tosave$indsout
+
+tr = tosave$trendsout
+
+trS = filter(tr,Region_type == "stratum")
+trS$Model = toupper(trS$model)
+trS$Model[which(trS$Model == "FIRSTDIFF")] <- "DIFFERENCE"
+
+trS$abs_Trend = abs(trS$Trend)
+trS$log_Number_Routes = log(trS$Mean_Number_of_Routes,base = 10)
+#trS$log_Number_Routes = log(trS$Relative_Abundance*trS$Mean_Number_of_Routes,base = 10)
+
+#trS$data_cat = cut(trS$log_Number_Routes,breaks = c(0,1,2,3,4,5))
+trpl = ggplot(data = trS,aes(x = Mean_Number_of_Routes,y = abs_Trend,colour = model))+
+  geom_point()+
+  theme_classic()+
+  theme(legend.position = "none",
+        legend.text = element_text(size = 6))+
+  ylab("Absolute value of long-term trend (%/year)")+
+  xlab("Mean number of routes in the stratum/year")+
+  scale_x_continuous(trans = "log", breaks = (c(1,3,10,25,50)))+
+  scale_y_continuous(limits = c(0,NA),expand = c(0,0))+
+  facet_wrap(facets = ~Model,nrow = 2)+
+  geom_smooth(method = "lm")+
+  scale_colour_manual(values = model_pallete, aesthetics = c("colour","fill"))
+
+
+print(trpl)
+svplots[[species]] <- trpl
+
+}
+
+dev.off()
+
+save(list = "svplots",file = "Figures/supplement/Fig 5 all species.RData")
 
 
 
@@ -1895,10 +1895,10 @@ rm(svplots)
 load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 2 all species.RData")
 svplots2 = svplots
 rm(svplots)
-load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 4 all species.RData")
-svplots4 = svplots
+load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 4 all models.RData")
+load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 5 all species.RData")
+svplots5 = svplots
 rm(svplots)
-load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 5 all models.RData")
 
 load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 6 all species.RData")
 svplots6 = svplots
@@ -1911,7 +1911,7 @@ rm(svplots)
 save(list = c("svplots1",
               "svplots2",
               "overall.comparison",
-              "svplots4",
+              "svplots5",
               "svplots6",
               "svplots9",
               "qqout"),
