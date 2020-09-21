@@ -14,3 +14,7 @@ gam_parameter_explore.r
 plotting_the_trajectories.r
 **MEE/
 **ISEC/
+*doc/
+**arch.R
+
+
