@@ -4,6 +4,7 @@
 .Ruserdata
 *to_delete/
 *output/
+*output_prior_comp/
 *old_models/
 *previous versions w precision/
 final_graphing.r
