@@ -1878,7 +1878,124 @@ species = "Barn Swallow"
 print(qqout)
 
   
+
+
+
+# Trend precision analysis ------------------------------------------------
+
+
+
+for(species in demo_sp[c(3,2,6,1,4,5,7,8,9)]){
+model = "gamye"
+sp_dir = paste0("output/",species,"/")
+
+load(paste0(sp_dir,model,"/jags_data.RData"))  
+
+load(paste0(sp_dir,model,"/jags_mod_full.RData")) 
+
+load(paste0(sp_dir,model,"/parameter_model_run.RData"))  
+
+
+inds_gamye <- generate_indices(jags_mod = jags_mod_full,
+                               jags_data = jags_data,
+                               max_backcast = NULL,
+                               alternate_n = "n") 
+
+inds_gamnoye <- generate_indices(jags_mod = jags_mod_param,
+                                 jags_data = jags_data,
+                                 max_backcast = NULL,
+                                 alternate_n = "n3") 
+
+
+load(paste0(sp_dir,"slope/jags_mod_full.RData"))
+
+inds_slope <- generate_indices(jags_mod = jags_mod_full,
+                               jags_data = jags_data,
+                               max_backcast = NULL,
+                               alternate_n = "n") 
+
+
+
+load(paste0(sp_dir,"firstdiff/jags_mod_full.RData"))
+
+inds_firstdiff <- generate_indices(jags_mod = jags_mod_full,
+                                   jags_data = jags_data,
+                                   max_backcast = NULL,
+                                   alternate_n = "n") 
+
+
+
+
+  trst_gamye = generate_trends(indices = inds_gamye,
+                               Min_year = 1970,
+                               #quantiles = qs,
+                               slope = T,
+                               prob_decrease = c(0,25,30,50),
+                               prob_increase = c(0,33,100))
+  trst_gamye$decomp <- "GAMYE - Including Year Effects"
   
+  trst_gamnoye = generate_trends(indices = inds_gamnoye,
+                                 Min_year = 1970,
+                                 #quantiles = qs,
+                                 slope = T,
+                                 prob_decrease = c(0,25,30,50),
+                                 prob_increase = c(0,33,100))
+  trst_gamnoye$decomp <- "GAMYE - Smooth only"
+  
+  
+  trst_sl = generate_trends(indices = inds_slope,
+                            Min_year = 1970,
+                            #quantiles = qs,
+                            slope = T,
+                            prob_decrease = c(0,25,30,50),
+                            prob_increase = c(0,33,100))
+  trst_sl$decomp <- "SLOPE"
+  
+  trst_firstdiff = generate_trends(indices = inds_firstdiff,
+                                   Min_year = 1970,
+                                   #quantiles = qs,
+                                   slope = T,
+                                   prob_decrease = c(0,25,30,50),
+                                   prob_increase = c(0,33,100))
+  trst_firstdiff$decomp <- "DIFFERENCE"
+  
+  tmpp <- rbind(trst_gamye,trst_gamnoye,trst_sl,trst_firstdiff)
+  tmpp$species <- species
+  if(species == "Wood Thrush"){
+   tcos = tmpp
+  
+  }else{
+    tcos <- rbind(tcos,tmpp)
+  }
+ 
+}
+
+
+   tcos$CI_Width <- tcos$Width_of_95_percent_Credible_Interval
+   tcos$CI_Width_slope <- tcos$Width_of_95_percent_Credible_Interval_Slope
+   
+   
+   colye2 = c(colye,model_pallete[c("slope","firstdiff")] )
+   names(colye2) <- unique(tcos$decomp)
+   
+   
+  mean_CI <- tcos %>% 
+    group_by(species,decomp) %>% 
+    summarise(mCI = mean(CI_Width),
+              mCIs = mean(CI_Width_slope))
+
+  pp = ggplot(data = tcos, aes(x = decomp,y = CI_Width,colour = decomp))+
+    geom_boxplot()+
+    scale_colour_manual(values = colye2, aesthetics = c("fill"))+
+    facet_wrap(facets = ~species,scales = "free")
+
+
+  
+  
+  
+  colye2 = c(colye,model_pallete[c("slope","firstdiff")] )
+names(colye2) <- unique(tcos$decomp)
+
   
 
 
