@@ -1878,8 +1878,195 @@ species = "Barn Swallow"
 print(qqout)
 
   
+
+
+
+# Trend precision analysis ------------------------------------------------
+
+
+# showing for only 9 species because of 3 x 3 grid, and CHimney Swift's have effectively no annual fluctuations so not relevant for this issue
+for(species in demo_sp[c(3,2,6,1,4,5,7,8,9)]){
+model = "gamye"
+sp_dir = paste0("output/",species,"/")
+
+load(paste0(sp_dir,model,"/jags_data.RData"))  
+
+load(paste0(sp_dir,model,"/jags_mod_full.RData")) 
+
+load(paste0(sp_dir,model,"/parameter_model_run.RData"))  
+
+
+inds_gamye <- generate_indices(jags_mod = jags_mod_full,
+                               jags_data = jags_data,
+                               max_backcast = NULL,
+                               regions = "stratum",
+                               alternate_n = "n") 
+
+inds_gamnoye <- generate_indices(jags_mod = jags_mod_param,
+                                 jags_data = jags_data,
+                                 max_backcast = NULL,
+                                 regions = "stratum",
+                                 alternate_n = "n3") 
+
+
+load(paste0(sp_dir,"slope/jags_mod_full.RData"))
+
+inds_slope <- generate_indices(jags_mod = jags_mod_full,
+                               jags_data = jags_data,
+                               max_backcast = NULL,
+                               regions = "stratum",
+                               alternate_n = "n") 
+
+
+
+load(paste0(sp_dir,"firstdiff/jags_mod_full.RData"))
+
+inds_firstdiff <- generate_indices(jags_mod = jags_mod_full,
+                                   jags_data = jags_data,
+                                   max_backcast = NULL,
+                                   regions = "stratum",
+                                   alternate_n = "n") 
+
+
+
+
+  trst_gamye = generate_trends(indices = inds_gamye,
+                               Min_year = 1970,
+                               #quantiles = qs,
+                               slope = T,
+                               prob_decrease = c(0,25,30,50),
+                               prob_increase = c(0,33,100))
+  trst_gamye$decomp <- "GAMYE - Including Year Effects"
+  
+  trst_gamnoye = generate_trends(indices = inds_gamnoye,
+                                 Min_year = 1970,
+                                 #quantiles = qs,
+                                 slope = T,
+                                 prob_decrease = c(0,25,30,50),
+                                 prob_increase = c(0,33,100))
+  trst_gamnoye$decomp <- "GAMYE - Smooth only"
   
   
+  trst_sl = generate_trends(indices = inds_slope,
+                            Min_year = 1970,
+                            #quantiles = qs,
+                            slope = T,
+                            prob_decrease = c(0,25,30,50),
+                            prob_increase = c(0,33,100))
+  trst_sl$decomp <- "SLOPE"
+  
+  trst_firstdiff = generate_trends(indices = inds_firstdiff,
+                                   Min_year = 1970,
+                                   #quantiles = qs,
+                                   slope = T,
+                                   prob_decrease = c(0,25,30,50),
+                                   prob_increase = c(0,33,100))
+  trst_firstdiff$decomp <- "DIFFERENCE"
+  
+  tmpp <- rbind(trst_gamye,trst_gamnoye,trst_sl,trst_firstdiff)
+  tmpp$species <- species
+  if(species == "Wood Thrush"){
+   tcos = tmpp
+  
+  }else{
+    tcos <- rbind(tcos,tmpp)
+  }
+ 
+}
+
+
+   tcos$CI_Width <- tcos$Width_of_95_percent_Credible_Interval
+   tcos$CI_Width_slope <- tcos$Width_of_95_percent_Credible_Interval_Slope
+   
+   tcos$decomp <- factor(tcos$decomp,levels = c("GAMYE - Including Year Effects",
+                                                "GAMYE - Smooth only",
+                                                "SLOPE",
+                                                "DIFFERENCE"),
+                         ordered = TRUE)
+   
+   colye2 = c(colye,model_pallete[c("slope","firstdiff")] )
+   names(colye2) <- unique(tcos$decomp)
+   
+ 
+  mean_CI <- tcos %>% 
+    group_by(species,decomp) %>% 
+    summarise(mCI = mean(CI_Width),
+              mCIs = mean(CI_Width_slope))
+  
+  tcos$decomp_f <- factor(tcos$decomp,ordered = FALSE,levels = c("GAMYE - Smooth only",
+                                                                 "GAMYE - Including Year Effects",
+                                                                 "SLOPE",
+                                                                 "DIFFERENCE"))
+  tcos_out <- filter(tcos,CI_Width >= 20)
+  tcos <- filter(tcos,CI_Width < 20)
+  
+     tcos2 <- filter(tcos,species != "Pine Siskin") 
+     
+     tcos3 <- filter(tcos,species == "Pine Siskin") 
+     
+  library(lme4)
+ 
+      MCI = glmer(CI_Width ~ decomp_f + (1|species) + (1|Region),
+              data = tcos2,
+              family = gaussian(link = "log"))
+      
+      newd = expand.grid(species = unique(tcos2$species),
+                         decomp_f = levels(tcos$decomp_f),
+     Region = NA)
+
+    newd$pred = predict(MCI,newdata = newd,
+            type = "response",re.form = ~ (1|species))
+
+
+      
+      MCI_PISI = glmer(CI_Width ~ decomp_f + (1|Region),
+             data = tcos3,
+             family = gaussian(link = "log"))
+  summary(MCI_PISI)
+  
+  MCI_s = glmer(CI_Width_slope ~ decomp_f + (1|species) + (1|Region),
+             data = tcos2,
+             family = gaussian(link = "log"))
+  summary(MCI_s)
+  
+  MCI_PISI_s = glmer(CI_Width_slope ~ decomp_f + (1|Region),
+                  data = tcos3,
+                  family = gaussian(link = "log"))
+  summary(MCI_PISI_s)
+  
+  
+  tcos_stacked <- tcos %>%
+    select(species,decomp,Region,CI_Width,CI_Width_slope) %>% 
+    pivot_longer(cols = starts_with("CI_Width"),
+                 values_to = "Trend_CI")
+  
+  
+  ## pp plot is the boxplots of the width of the credible intervals for all stratum-level trends from each model and for each species
+  pp = ggplot(data = tcos, aes(x = decomp,y = CI_Width,colour = decomp))+
+    geom_boxplot()+
+   # geom_point(data = newd,aes(x = decomp_f,y = pred,colour = decomp_f),size = 2,stroke = 2)+
+    scale_colour_manual(values = colye2, aesthetics = c("fill","colour"))+
+    facet_wrap(facets = ~species,scales = "free_y")+
+    xlab("")+
+    ylab("Width of 95% Credible Interval on Trend (%/year)")+
+    theme_classic()+
+    theme(legend.position = "none",axis.text.x = element_text(angle = 90,hjust = 0.5))
+
+
+  ## pp plot is the boxplots of the width of the credible intervals for all stratum-level trends from each model and for each species
+  pp2 = ggplot(data = tcos_stacked, aes(x = name,y = Trend_CI,colour = decomp))+
+    geom_boxplot(position = position_dodge(width = 0.5))+
+    scale_colour_manual(values = colye2, aesthetics = c("fill","colour"))+
+    facet_wrap(facets = ~species,scales = "free_y")+
+    xlab("")+
+    ylab("Width of 95% Credible Interval on Trend (%/year)")+
+    theme_classic()+
+    theme(legend.position = "none",axis.text.x = element_text(angle = 90,hjust = 0.5))
+  
+  
+  
+  
+
 
 
 
@@ -1914,7 +2101,8 @@ save(list = c("svplots1",
               "svplots5",
               "svplots6",
               "svplots9",
-              "qqout"),
+              "qqout",
+              "pp"),
      file = "figures/supplement/all_suppl_figures.RData")
 
 

@@ -1,5 +1,5 @@
 ---
-title: "Supplemental Material Figures S4 to S7, Smith and Edwards 2020, Improved  status and trend estimates from the North American Breeding Bird Survey using a Bayesian hierarchical generalized additive model"
+title: "Supplemental Material Figures S4 to S8, Smith and Edwards 2020, Improved  status and trend estimates from the North American Breeding Bird Survey using a Bayesian hierarchical generalized additive model"
 output: pdf_document
 ---
 
@@ -109,11 +109,21 @@ for(sp in species){
 ```
 
 
-```{r qqout, fig.cap = "Figure S7: Normal qq plots for the differences in elpd between model pairs for Barn Swallow, demonstrating the non-normal distribution and the heavy tails better estimated using a t-distribution",echo=FALSE}
+```{r qqout, fig.height= 7, fig.cap = "Figure S7: Normal qq plots for the differences in elpd between model pairs for Barn Swallow, demonstrating the non-normal distribution and the heavy tails better estimated using a t-distribution",echo=FALSE}
 
 
 
    print(qqout)
+ 
+```
+
+
+
+```{r pp, fig.height= 7,fig.cap = "Figure S8: Comparison of the width of the credible intervals for trends (1970-2018) from the GAMYE either including the year-effects or using only the smooth component, compared to the same interval widths for trends from the SLOPE and DIFFERENCE models. The smooth-only trends from the GAMYE model tend to have slightly narrower credible intervals than the trends from the same model that include the year effects. However, the magnitude of the difference in precision is small, and in most cases the GAMYE trends with the smooth component only have CIs that are either similar in width or even larger than the estimates from the SLOPE and DIFFERENCE models. For one species, the width of the credible interval is smaller for the smooth only trends - Pine Siskin. This species' population trajectory is strongly dominated by extreme annual fluctuations and so explicitly modeling these annual fluctuations and removing their influence from the trend calculation results in a much more precise estimate of the average annual rate of change",echo=FALSE}
+
+
+
+   print(pp)
  
 ```
 
