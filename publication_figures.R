@@ -2035,11 +2035,7 @@ inds_firstdiff <- generate_indices(jags_mod = jags_mod_full,
   summary(MCI_PISI_s)
   
   
-  tcos_stacked <- tcos %>%
-    select(species,decomp,Region,CI_Width,CI_Width_slope) %>% 
-    pivot_longer(cols = starts_with("CI_Width"),
-                 values_to = "Trend_CI")
-  
+
   
   ## pp plot is the boxplots of the width of the credible intervals for all stratum-level trends from each model and for each species
   pp = ggplot(data = tcos, aes(x = decomp,y = CI_Width,colour = decomp))+
@@ -2052,23 +2048,31 @@ inds_firstdiff <- generate_indices(jags_mod = jags_mod_full,
     theme_classic()+
     theme(legend.position = "none",axis.text.x = element_text(angle = 90,hjust = 0.5))
 
-
-  ## pp plot is the boxplots of the width of the credible intervals for all stratum-level trends from each model and for each species
-  pp2 = ggplot(data = tcos_stacked, aes(x = name,y = Trend_CI,colour = decomp))+
-    geom_boxplot(position = position_dodge(width = 0.5))+
-    scale_colour_manual(values = colye2, aesthetics = c("fill","colour"))+
-    facet_wrap(facets = ~species,scales = "free_y")+
-    xlab("")+
-    ylab("Width of 95% Credible Interval on Trend (%/year)")+
-    theme_classic()+
-    theme(legend.position = "none",axis.text.x = element_text(angle = 90,hjust = 0.5))
+  # tcos_stacked <- tcos %>%
+  #   select(species,decomp,Region,CI_Width,CI_Width_slope) %>% 
+  #   pivot_longer(cols = starts_with("CI_Width"),
+  #                values_to = "Trend_CI")
+  # 
+  # ## pp plot is the boxplots of the width of the credible intervals for all stratum-level trends from each model and for each species
+  # pp2 = ggplot(data = tcos_stacked, aes(x = name,y = Trend_CI,colour = decomp))+
+  #   geom_boxplot(position = position_dodge(width = 0.5))+
+  #   scale_colour_manual(values = colye2, aesthetics = c("fill","colour"))+
+  #   facet_wrap(facets = ~species,scales = "free_y")+
+  #   xlab("")+
+  #   ylab("Width of 95% Credible Interval on Trend (%/year)")+
+  #   theme_classic()+
+  #   theme(legend.position = "none",axis.text.x = element_text(angle = 90,hjust = 0.5))
+  # 
+  # 
   
   
+
+
+
+# Alternative priors for sigma_B ------------------------------------------
+
+
   
-  
-
-
-
 
 
 
