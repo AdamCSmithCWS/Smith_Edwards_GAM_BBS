@@ -1,7 +1,7 @@
 ###################################################
 # Adam C. Smith & Brandon P.M. Edwards
 # GAM Paper Script
-# This is short demonstration of the insensitivity of the GAM results to the prior on sigma_B
+# This is simple demonstration of the insensitivity of the GAM results to the prior on sigma_B
 
 n_iter = 10000
 n_thin = 10

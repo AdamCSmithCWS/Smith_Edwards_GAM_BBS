@@ -15,6 +15,11 @@ library(RColorBrewer)
 library(facetscales)
 library(patchwork)
 
+
+
+library(tidybayes)
+
+
 load("comparison_summary_output.RData")
 
 
@@ -1878,6 +1883,7 @@ species = "Barn Swallow"
 print(qqout)
 
   
+save(list = "qqout", file = "Figures/supplement/elpd_distribution.RData")
 
 
 
@@ -2048,6 +2054,8 @@ inds_firstdiff <- generate_indices(jags_mod = jags_mod_full,
     theme_classic()+
     theme(legend.position = "none",axis.text.x = element_text(angle = 90,hjust = 0.5))
 
+  
+  save(list = "pp", file = "Figures/supplement/precision_comparison.RData")
   # tcos_stacked <- tcos %>%
   #   select(species,decomp,Region,CI_Width,CI_Width_slope) %>% 
   #   pivot_longer(cols = starts_with("CI_Width"),
@@ -2071,15 +2079,19 @@ inds_firstdiff <- generate_indices(jags_mod = jags_mod_full,
 
 # Alternative priors for sigma_B ------------------------------------------
 
+### see script "prior_comparisons_GAM.R"
 
   
 
 
-
 # supplmental figure compile ----------------------------------------------
 
-
-
+  load(file = "figures/supplement/prior_plots.RData")  
+  
+load("Figures/supplement/precision_comparison.RData")
+  
+  load("Figures/supplement/elpd_distribution.RData")
+  
 load(file = "c:/GAM_Paper_Script/figures/supplement/Fig 1 all species.RData")
 svplots1 = svplots
 rm(svplots)
@@ -2106,7 +2118,8 @@ save(list = c("svplots1",
               "svplots6",
               "svplots9",
               "qqout",
-              "pp"),
+              "pp",
+              "prior_plots"),
      file = "figures/supplement/all_suppl_figures.RData")
 
 
