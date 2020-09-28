@@ -125,7 +125,7 @@ library(ggrepel)
 prior_plots <- vector(mode = "list",length = length(species_to_run))
 jj = 0
 
-for(species in species_to_run[c(2,4,5,6)]){
+for(species in species_to_run){
 jj = jj+1
     sp.dir = paste0("output_prior_comp/", species)
  
@@ -143,8 +143,8 @@ jj = jj+1
     jags_mod_out[[m]] <- jags_mod_full
     
   }
-    indsa <- generate_indices(jags_mod = jags_mod_out[[2]],jags_data = jags_data,alternate_n = "na")
-    indso <- generate_indices(jags_mod = jags_mod_out[[1]],jags_data = jags_data,alternate_n = "na")
+    # indsa <- generate_indices(jags_mod = jags_mod_out[[2]],jags_data = jags_data,alternate_n = "na")
+    # indso <- generate_indices(jags_mod = jags_mod_out[[1]],jags_data = jags_data,alternate_n = "na")
 
     # tra <- generate_trends(indices = indsa)
     # tro <- generate_trends(indices = indso)
@@ -176,16 +176,20 @@ jj = jj+1
       int2t <- filter(int2,Region == rg)
       int2t$prior <- "gamma(2,0.2)"
       
-      rtlab = "Number of Routes * 10"
-      if(max(int1t$nrts) > 50){
-        datcc <- slice_sample(datcc,prop = 0.1)
+      rtlab = "Number of Routes"
+      if(max(int1t$nrts,na.rm = T) > 50 & max(int1t$nrts,na.rm = T) < 300){
+        datcc <- datcc %>% 
+          group_by(Year) %>% 
+          slice_sample(prop = 0.1)
         rtlab = "Number of Routes * 10"
-      
-      if(max(int1t$nrts) > 300){
-        datcc <- slice_sample(datcc,prop = 0.02)
+      }
+      if(max(int1t$nrts,na.rm = T) > 300){
+        datcc <- datcc %>% 
+          group_by(Year) %>% 
+          slice_sample(prop = 0.02)
         rtlab = "Number of Routes * 50"
       }
-      }
+      
       ip <- bind_rows(int1t,int2t)
       
       uylim <- max(ip$Index_q_0.975)
