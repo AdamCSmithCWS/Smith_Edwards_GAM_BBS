@@ -2087,6 +2087,17 @@ inds_firstdiff <- generate_indices(jags_mod = jags_mod_full,
 # supplmental figure compile ----------------------------------------------
 
   load(file = "figures/supplement/prior_plots.RData")  
+  names(prior_plots) <- c("Barn Swallow",
+                      "Wood Thrush",
+                      "American Kestrel",
+                      "Chimney Swift",
+                      "Ruby-throated Hummingbird",
+                      "Chestnut-collared Longspur",
+                      "Cooper's Hawk",
+                      "Canada Warbler",
+                      "Carolina Wren",
+                      "Pine Siskin")
+  
   
 load("Figures/supplement/precision_comparison.RData")
   
