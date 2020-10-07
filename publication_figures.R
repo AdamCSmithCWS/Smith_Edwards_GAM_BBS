@@ -1891,7 +1891,7 @@ save(list = "qqout", file = "Figures/supplement/elpd_distribution.RData")
 
 
 # showing for only 9 species because of 3 x 3 grid, and CHimney Swift's have effectively no annual fluctuations so not relevant for this issue
-for(species in demo_sp[c(3,2,6,1,4,5,7,8,9)]){
+for(species in demo_sp[c(10,2,3,1,4,5,7,8,9)]){
 model = "gamye"
 sp_dir = paste0("output/",species,"/")
 

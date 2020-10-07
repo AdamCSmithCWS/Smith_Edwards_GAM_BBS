@@ -1,0 +1,92 @@
+---
+title: "Supplemental Material Figures S8 to S9, Smith and Edwards 2020, Improved  status and trend estimates from the North American Breeding Bird Survey using a Bayesian hierarchical generalized additive model"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(ggplot2)
+library(captioner)
+
+```
+
+<!-- load figures and species -->
+\newpage
+ 
+```{r, echo = FALSE}
+
+load("c:/GAM_Paper_Script/figures/supplement/all_suppl_figures.RData")
+
+capt_s1 = captioner(prefix = "S",levels = 2,
+          auto_space = F,type = c("n","C"),infix = ".")
+
+
+tmp <- capt_s1("qq1")
+bump(capt_s1,level = 1)
+tmp1 <- capt_s1("qq2")
+bump(capt_s1,level = 1)
+tmp2 <- capt_s1("qq3")
+bump(capt_s1,level = 1)
+tmp3 <- capt_s1("qq4")
+bump(capt_s1,level = 1)
+tmp4 <- capt_s1("qq5")
+bump(capt_s1,level = 1)
+tmp5 <- capt_s1("qq6")
+bump(capt_s1,level = 1)
+tmp6 <- capt_s1("qq7")
+bump(capt_s1,level = 1)
+
+capts <- vector(length = 1)
+names(capts) <- "pp"
+  capts <- capt_s1(name = paste0("pp"),caption = "Comparison of the width of the credible intervals for trends (1970-2018) from the GAMYE either including the year-effects or using only the smooth component, compared to the same interval widths for trends from the SLOPE and DIFFERENCE models. The smooth-only trends from the GAMYE model tend to have slightly narrower credible intervals than the trends from the same model that include the year effects. However, the magnitude of the difference in precision is small, and in most cases the GAMYE trends with the smooth component only have CIs that are either similar in width or even larger than the estimates from the SLOPE and DIFFERENCE models. For one species, the width of the credible interval is smaller for the smooth only trends - Pine Siskin. This species' population trajectory is strongly dominated by extreme annual fluctuations and so explicitly modeling these annual fluctuations and removing their influence from the trend calculation results in a much more precise estimate of the average annual rate of change",
+          level = 2)
+
+
+```
+
+
+```{r pp, fig.height= 6, fig.cap = capts,echo=FALSE}
+
+   print(pp)
+
+  cat("\n\n")
+ 
+```
+Figure S8. Comparison of the width of the credible intervals for trends (1970-2018) from the GAMYE either including the year-effects or using only the smooth component, compared to the same interval widths for trends from the SLOPE and DIFFERENCE models. The smooth-only trends from the GAMYE model tend to have slightly narrower credible intervals than the trends from the same model that include the year effects. However, the magnitude of the difference in precision is small, and in most cases the GAMYE trends with the smooth component only have CIs that are either similar in width or even larger than the estimates from the SLOPE and DIFFERENCE models. For one species, the width of the credible interval is smaller for the smooth only trends - Pine Siskin. This species' population trajectory is strongly dominated by extreme annual fluctuations and so explicitly modeling these annual fluctuations and removing their influence from the trend calculation results in a much more precise estimate of the average annual rate of change
+
+
+\newpage
+ 
+# Assessing the prior sensitivity of the GAM hyperparameters
+ 
+ The inverse gamma prior on the variance of the GAM hyperparameters follows the recommended priors in Crainiceanu et al. 2005 (~gamma(0.01,0.0001)). If transformed to the scale of the standard deviation, the 99% percentile of the prior distribution is > 10^100. This prior is intended to be uninformative because it is effectively flat across the entire range of plausible values (< approximately 5). However, this prior also includes values of the variance (or standard deviation) that are far beyond the range of plausible values. The posterior distribution of this variance parameter is largely responsible for the complexity penalty, controlling the degree of smoothing in the GAM, and so if the prior is unintentionally informative, it could result in under-restrictive smoothing penalties. If this "uninformative" prior is leading to under-restrictive smoothing, it would produce population trajectories that over-fit the data and appear more complex (i.e., "wiggly") than warranted. 
+ The figures below show that using a much more restrictive prior (~gamma(2,0.2)) that places > 99% of the posterior density for the standard deviation at values < 1.2. For most species, this is a regularizing prior because almost all of the prior density falls below the posterior estimates, which are generally > 2.0. So the two priors are very different, yet as the following figures demonstrate, the posterior estimates of the GAM trajectories are almost identical. The population inferences from the GAMs are almost entirely driven by the model-structures and the data.  
+```{r, echo = FALSE}
+
+tmp <- capt_s1("qq")
+bump(capt_s1,level = 1)
+species <- names(prior_plots)
+
+capts <- vector(length = length(species))
+names(capts) <- species
+for (sp in species)
+{
+  capts[sp] <- capt_s1(name = paste0(sp,"ten"),caption = paste0("Comparison of the continental population trajectories for ", sp," from a model for the BBS using a hierarchical GAM smooth with two alternative prior distributions on the variance parameter that provides the complexity penalty for the survey-wide GAM hyperparameters, i.e., the mean continental population trajectory towards which each stratum-level smooth is shrunk"),
+          level = 2)
+
+}
+
+```
+
+```{r prior_plots, fig.cap = capts,echo=FALSE}
+
+
+for(sp in species){
+   print(prior_plots[[sp]])
+  cat("\n\n")
+
+}
+
+```
+
